@@ -1,0 +1,282 @@
+@import 'tailwindcss';
+
+@plugin 'tailwindcss-animate';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-brand: var(--brand);
+    --color-brand-foreground: var(--brand-foreground);
+    --color-brand-accent: var(--brand-accent);
+
+    --color-status-met: var(--status-met);
+    --color-status-partial: var(--status-partial);
+    --color-status-not-met: var(--status-not-met);
+    --color-status-unknown: var(--status-unknown);
+
+    --animate-fade-up: fade-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+    @keyframes fade-up {
+        from {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    --animate-float: float 6s ease-in-out infinite;
+    --animate-glow: glow 5s ease-in-out infinite;
+    --animate-shine: shine 6s linear infinite;
+
+    @keyframes float {
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-8px);
+        }
+    }
+    @keyframes glow {
+        0%,
+        100% {
+            opacity: 0.55;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.85;
+            transform: scale(1.06);
+        }
+    }
+    @keyframes shine {
+        from {
+            background-position: 0% 50%;
+        }
+        to {
+            background-position: 200% 50%;
+        }
+    }
+
+    --color-glow: var(--glow);
+
+    --color-sidebar: var(--sidebar-background);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+}
+
+/*
+  EBIS Core theme — premium dark/light.
+  EBIS blue primary with EBIS red accent; near-black dark canvas, crisp light canvas.
+*/
+:root {
+    --background: hsl(240, 20%, 99%);
+    --foreground: hsl(238, 45%, 9%);
+    --card: hsl(0, 0%, 100%);
+    --card-foreground: hsl(238, 45%, 9%);
+    --popover: hsl(0, 0%, 100%);
+    --popover-foreground: hsl(238, 45%, 9%);
+    --primary: hsl(236, 88%, 50%);
+    --primary-foreground: hsl(0, 0%, 100%);
+    --secondary: hsl(240, 12%, 95.5%);
+    --secondary-foreground: hsl(240, 10%, 10%);
+    --muted: hsl(240, 12%, 96%);
+    --muted-foreground: hsl(240, 5%, 42%);
+    --accent: hsl(234, 80%, 96.5%);
+    --accent-foreground: hsl(238, 85%, 32%);
+    --destructive: hsl(355, 78%, 52%);
+    --destructive-foreground: hsl(0, 0%, 100%);
+    --border: hsl(240, 9%, 91%);
+    --input: hsl(240, 8%, 87%);
+    --ring: hsl(236, 88%, 50%);
+    --brand: hsl(238, 100%, 21%);
+    --brand-foreground: hsl(0, 0%, 100%);
+    --brand-accent: hsl(358, 78%, 52%);
+    --glow: hsl(234, 95%, 58%);
+    --status-met: hsl(152, 65%, 36%);
+    --status-partial: hsl(36, 92%, 47%);
+    --status-not-met: hsl(355, 78%, 52%);
+    --status-unknown: hsl(240, 6%, 60%);
+    --chart-1: hsl(236, 88%, 50%);
+    --chart-2: hsl(152, 65%, 36%);
+    --chart-3: hsl(36, 92%, 47%);
+    --chart-4: hsl(355, 78%, 52%);
+    --chart-5: hsl(240, 6%, 60%);
+    --radius: 0.625rem;
+    --sidebar-background: hsl(240, 20%, 98%);
+    --sidebar-foreground: hsl(240, 6%, 30%);
+    --sidebar-primary: hsl(236, 88%, 50%);
+    --sidebar-primary-foreground: hsl(0, 0%, 100%);
+    --sidebar-accent: hsl(234, 70%, 95%);
+    --sidebar-accent-foreground: hsl(238, 85%, 28%);
+    --sidebar-border: hsl(240, 9%, 91%);
+    --sidebar-ring: hsl(236, 88%, 50%);
+}
+
+.dark {
+    --background: hsl(238, 35%, 4%);
+    --foreground: hsl(240, 10%, 96%);
+    --card: hsl(238, 28%, 7%);
+    --card-foreground: hsl(240, 10%, 96%);
+    --popover: hsl(238, 28%, 8%);
+    --popover-foreground: hsl(240, 10%, 96%);
+    --primary: hsl(232, 100%, 72%);
+    --primary-foreground: hsl(238, 80%, 10%);
+    --secondary: hsl(238, 22%, 12%);
+    --secondary-foreground: hsl(240, 10%, 96%);
+    --muted: hsl(238, 22%, 10.5%);
+    --muted-foreground: hsl(240, 6%, 62%);
+    --accent: hsl(236, 45%, 15%);
+    --accent-foreground: hsl(232, 100%, 86%);
+    --destructive: hsl(355, 85%, 62%);
+    --destructive-foreground: hsl(0, 0%, 100%);
+    --border: hsl(238, 20%, 15%);
+    --input: hsl(238, 20%, 19%);
+    --ring: hsl(232, 100%, 72%);
+    --brand: hsl(232, 100%, 72%);
+    --brand-foreground: hsl(238, 80%, 10%);
+    --brand-accent: hsl(358, 92%, 64%);
+    --glow: hsl(234, 100%, 60%);
+    --status-met: hsl(152, 60%, 52%);
+    --status-partial: hsl(40, 95%, 60%);
+    --status-not-met: hsl(355, 88%, 66%);
+    --status-unknown: hsl(240, 6%, 55%);
+    --chart-1: hsl(232, 100%, 72%);
+    --chart-2: hsl(152, 60%, 52%);
+    --chart-3: hsl(40, 95%, 60%);
+    --chart-4: hsl(355, 88%, 66%);
+    --chart-5: hsl(240, 6%, 55%);
+    --sidebar-background: hsl(238, 35%, 4%);
+    --sidebar-foreground: hsl(240, 6%, 70%);
+    --sidebar-primary: hsl(232, 100%, 72%);
+    --sidebar-primary-foreground: hsl(245, 40%, 8%);
+    --sidebar-accent: hsl(236, 35%, 13%);
+    --sidebar-accent-foreground: hsl(240, 10%, 96%);
+    --sidebar-border: hsl(238, 20%, 13%);
+    --sidebar-ring: hsl(232, 100%, 72%);
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+        font-feature-settings: 'ss01', 'cv11';
+        -webkit-font-smoothing: antialiased;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        ::before,
+        ::after {
+            animation-duration: 0.01ms !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+}
+
+@layer utilities {
+    /* Gradient headline text */
+    .text-gradient {
+        background-image: linear-gradient(180deg, var(--foreground) 30%, color-mix(in oklab, var(--foreground) 55%, transparent));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    .text-gradient-brand {
+        background-image: linear-gradient(90deg, var(--primary), var(--brand-accent), var(--primary));
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    /* Faint grid background, masked to fade out */
+    .bg-grid {
+        background-image:
+            linear-gradient(to right, color-mix(in oklab, var(--foreground) 6%, transparent) 1px, transparent 1px),
+            linear-gradient(to bottom, color-mix(in oklab, var(--foreground) 6%, transparent) 1px, transparent 1px);
+        background-size: 56px 56px;
+    }
+    /* Scroll reveal (paired with useReveal) */
+    .reveal {
+        opacity: 0;
+        transform: translateY(16px);
+        transition:
+            opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+            transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .reveal.is-visible {
+        opacity: 1;
+        transform: none;
+    }
+}
