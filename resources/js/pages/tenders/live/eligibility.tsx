@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import type { EligibilityRow, Tender } from '@/types/ebis';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, Info, ListChecks, Loader2, RefreshCw, Scale } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Info, ListChecks, Loader2, RefreshCw, Scale } from 'lucide-react';
 import { useState } from 'react';
 
 interface Run {
@@ -77,6 +77,13 @@ export default function LiveEligibility({
                                 </Link>
                             </Button>
                             {editable && run && runButton('Check again')}
+                            {run && (
+                                <Button variant="outline" size="sm" asChild>
+                                    <Link href={route('tenders.gaps', tender.id)}>
+                                        Gap plan <ArrowRight className="size-4" />
+                                    </Link>
+                                </Button>
+                            )}
                         </>
                     }
                 />

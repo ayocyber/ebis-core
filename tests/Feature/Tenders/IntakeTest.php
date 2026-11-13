@@ -235,7 +235,7 @@ it('lists and shows tenders in the shape the frontend expects', function () {
         ->where('tender.documents.0.role', 'Invitation to tender'));
 
     // Sample-only stage pages send real tenders to their own page.
-    $this->get("/tenders/{$tender->id}/gaps")->assertRedirect("/tenders/{$tender->id}");
+    $this->get("/tenders/{$tender->id}/compliance")->assertRedirect("/tenders/{$tender->id}");
 });
 
 it('lets viewers look but not upload or change anything', function () {

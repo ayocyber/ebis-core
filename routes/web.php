@@ -5,6 +5,7 @@ use App\Http\Controllers\AcceptInvitationController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\CompanyProfileController;
 use App\Http\Controllers\EligibilityController;
+use App\Http\Controllers\GapDecisionController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\RequirementController;
 use App\Http\Controllers\TenantSwitchController;
@@ -12,6 +13,8 @@ use App\Http\Controllers\TenderController;
 use App\Http\Controllers\VaultDocumentController;
 use App\Models\AuditEvent;
 use App\Models\Tender;
+use App\Models\TenderDecision;
+use App\Support\Eligibility\EligibilityRunner;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -38,14 +41,22 @@ Route::middleware(['auth', 'tenant'])->group(function () {
 
     Route::post('tenants/{tenant}/switch', TenantSwitchController::class)->name('tenants.switch');
 
-    Route::get('dashboard', function () {
+    Route::get('dashboard', function (EligibilityRunner $runner) {
+        $tenders = Tender::with(['creator', 'documents' => fn ($q) => $q->withoutText()])
+            ->where('stage', '!=', TenderStage::Submitted->value)
+            ->orderBy('deadline')
+            ->get();
+
         return Inertia::render('dashboard', [
-            'tenders' => Tender::with(['creator', 'documents' => fn ($q) => $q->withoutText()])
-                ->where('stage', '!=', TenderStage::Submitted->value)
-                ->orderBy('deadline')
-                ->get()
-                ->map->toFrontend()
-                ->values(),
+            'tenders' => $tenders->map->toFrontend()->values(),
+            // Each tender's latest eligibility rows and decision, so gaps and go / no-go
+            // on the dashboard come from real data.
+            'workspaces' => $tenders->mapWithKeys(function (Tender $t) use ($runner) {
+                $run = $runner->latestRun($t);
+                $decision = TenderDecision::with('decider')->where('tender_id', $t->id)->latest('created_at')->latest('id')->first();
+
+                return [$t->id => ['rows' => $run ? $runner->rows($run) : [], 'decision' => $decision?->toFrontend()]];
+            }),
             'recentActivity' => AuditEvent::latest('id')->limit(5)->get()->map->toFrontend(),
         ]);
     })->name('dashboard');
@@ -97,11 +108,19 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     Route::post('tenders/{tender}/assessments/{assessment}/review', [EligibilityController::class, 'review'])
         ->whereUuid(['tender', 'assessment'])->name('tenders.assessments.review');
 
+    // Gaps and go / no-go of a real tender (M5).
+    Route::patch('tenders/{tender}/gaps/{gap}', [GapDecisionController::class, 'updateGap'])
+        ->whereUuid(['tender', 'gap'])->name('tenders.gaps.update');
+    Route::post('tenders/{tender}/decision', [GapDecisionController::class, 'decide'])
+        ->whereUuid('tender')->name('tenders.decision.store');
+
     // Stage pages. Sample tenders (tnd-001…) show the preview built on sample data.
     // Real tenders (UUIDs) use the real page where one exists, otherwise their tender page.
     $real = [
         'requirements' => [RequirementController::class, 'index'],
         'eligibility' => [EligibilityController::class, 'index'],
+        'gaps' => [GapDecisionController::class, 'gaps'],
+        'decision' => [GapDecisionController::class, 'decision'],
     ];
     foreach (['eligibility', 'gaps', 'decision', 'compliance', 'bid', 'requirements', 'documents', 'validation'] as $stage) {
         Route::get("tenders/{tender}/{$stage}", function (string $tender) use ($stage, $real) {

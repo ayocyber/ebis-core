@@ -1,7 +1,7 @@
 import { DeadlineChip } from '@/components/ebis/badges';
 import { Button } from '@/components/ui/button';
 import { type AuditEvent, useAudit } from '@/hooks/use-audit';
-import { useWorkspaces } from '@/hooks/use-tender-workspace';
+import { type WorkspaceView } from '@/hooks/use-tender-workspace';
 import { useVault } from '@/hooks/use-vault';
 import AppLayout from '@/layouts/app-layout';
 import { attentionItems, attentionMeta, greeting, isAssessed, isDrafting, openGaps, tenderReadiness } from '@/lib/dashboard';
@@ -10,7 +10,7 @@ import { canEdit, isOwner } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 import { expiryState } from '@/lib/vault';
 import { type BreadcrumbItem, type SharedData } from '@/types';
-import type { Tender, VaultDocument } from '@/types/ebis';
+import type { EligibilityRow, GoNoGoDecision, Tender, VaultDocument } from '@/types/ebis';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowRight, ArrowUpRight, CalendarClock, CheckCircle2, FileStack, Flag, Layers, ShieldAlert, Trophy, Upload, UserPlus } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -19,14 +19,30 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
 
 const gbp = (amount: number) => formatMoney({ amount, currency: 'GBP' });
 
-export default function Dashboard({ tenders }: { tenders: Tender[] }) {
+export default function Dashboard({
+    tenders,
+    workspaces,
+}: {
+    tenders: Tender[];
+    /** Each tender's latest eligibility rows and decision, from the server */
+    workspaces: Record<string, { rows: EligibilityRow[]; decision: GoNoGoDecision | null }>;
+}) {
     const { tenant, role, auth } = usePage<SharedData>().props;
     const now = useMemo(() => new Date(), []);
     const [showAll, setShowAll] = useState(false);
 
     // Real tenders only (the server leaves out submitted ones, soonest deadline first).
     const live = tenders;
-    const views = useWorkspaces(live.map((t) => t.id));
+    const views = useMemo<Record<string, WorkspaceView>>(
+        () =>
+            Object.fromEntries(
+                live.map((t) => [
+                    t.id,
+                    { rows: workspaces[t.id]?.rows ?? [], decision: workspaces[t.id]?.decision ?? undefined, sections: [], checklist: {} },
+                ]),
+            ),
+        [live, workspaces],
+    );
     const vault = useVault();
     const activity = useAudit(usePage<SharedData & { recentActivity: AuditEvent[] }>().props.recentActivity).slice(0, 5);
 
@@ -349,7 +365,7 @@ interface BidStatus {
     tone: 'good' | 'warn' | 'bad' | 'neutral';
 }
 
-function bidStatus(t: Tender, view: ReturnType<typeof useWorkspaces>[string], documents: VaultDocument[]): BidStatus {
+function bidStatus(t: Tender, view: WorkspaceView, documents: VaultDocument[]): BidStatus {
     if (view.signedOff) return { label: 'Signed off', tone: 'good' };
     if (isDrafting(t)) {
         const score = tenderReadiness(view, t, documents);

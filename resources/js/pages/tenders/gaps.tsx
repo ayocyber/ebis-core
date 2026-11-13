@@ -14,7 +14,7 @@ import { canEdit } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 import { expiryState } from '@/lib/vault';
 import { type SharedData } from '@/types';
-import type { EligibilityRow, Gap, GapSeverity } from '@/types/ebis';
+import type { EligibilityRow, Gap, GapSeverity, Tender } from '@/types/ebis';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { AlertTriangle, ArrowLeft, ArrowRight, CalendarClock, CheckCircle2, PartyPopper, PoundSterling } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -37,16 +37,50 @@ const groups: { severity: GapSeverity; title: string; hint: string }[] = [
 
 const gbp = (n: number) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n);
 
+/** Sample tenders: gap progress lives in the in-memory workspace. */
 export default function TenderGaps({ tenderId }: { tenderId: string }) {
-    const { role } = usePage<SharedData>().props;
     const tender = findTender(tenderId);
     const { rows, setGapStatus } = useTenderWorkspace(tenderId);
     const { documents, missing } = useVault();
+
+    if (!tender) return <TenderNotFound />;
+
+    /** Which upload a gap needs: renew an expired vault file, fill a known missing item, or a fresh document. */
+    const uploadTargetFor = (r: EligibilityRow): UploadTarget => {
+        const ev = r.gap!.evidence!;
+        const factIds = r.assessment.evidence.profileFacts.map((f) => f.id);
+        const gap = { tender, gapId: r.gap!.id, code: r.requirement.code, requirementTitle: r.requirement.title, ...ev };
+        if (ev.scope === 'bid') return { gap };
+        const expired = documents.find((d) => d.factIds.some((id) => factIds.includes(id)) && expiryState(d).state === 'expired');
+        const known = missing.find((m) => m.factId && factIds.includes(m.factId));
+        return { gap, replace: expired, missing: known };
+    };
+
+    return <GapsScreen tender={tender} rows={rows} onStatusChange={(r, s) => setGapStatus(r.gap!.id, s)} uploadTargetFor={uploadTargetFor} />;
+}
+
+/** Stage 5 (GAP-01…05): the gap plan, its timeline and progress. */
+export function GapsScreen({
+    tender,
+    rows,
+    onStatusChange,
+    uploadTargetFor,
+    notice,
+}: {
+    tender: Tender;
+    rows: EligibilityRow[];
+    onStatusChange: (row: EligibilityRow, status: Gap['status']) => void;
+    /** The vault upload that closes a gap, for gaps that need a document */
+    uploadTargetFor: (row: EligibilityRow) => UploadTarget;
+    /** Shown above the plan, e.g. a reminder to re-run the check after uploading */
+    notice?: React.ReactNode;
+}) {
+    const { role } = usePage<SharedData>().props;
     const [upload, setUpload] = useState<{ open: boolean; target: UploadTarget }>({ open: false, target: {} });
     const [filter, setFilter] = useState<StatusFilter>('active');
 
     const gapRows = useMemo(() => rows.filter((r) => r.gap), [rows]);
-    const workingDaysLeft = tender ? workingDaysBetween(new Date(), new Date(tender.deadline)) : 0;
+    const workingDaysLeft = workingDaysBetween(new Date(), new Date(tender.deadline));
 
     const stats = useMemo(() => {
         const open = gapRows.filter((r) => r.gap!.status !== 'closed');
@@ -62,19 +96,6 @@ export default function TenderGaps({ tenderId }: { tenderId: string }) {
         };
     }, [gapRows, workingDaysLeft]);
 
-    if (!tender) return <TenderNotFound />;
-
-    /** Which upload a gap needs: renew an expired vault file, fill a known missing item, or a fresh document. */
-    const uploadTargetFor = (r: EligibilityRow): UploadTarget => {
-        const ev = r.gap!.evidence!;
-        const factIds = r.assessment.evidence.profileFacts.map((f) => f.id);
-        const gap = { tender, gapId: r.gap!.id, code: r.requirement.code, requirementTitle: r.requirement.title, ...ev };
-        if (ev.scope === 'bid') return { gap };
-        const expired = documents.find((d) => d.factIds.some((id) => factIds.includes(id)) && expiryState(d).state === 'expired');
-        const known = missing.find((m) => m.factId && factIds.includes(m.factId));
-        return { gap, replace: expired, missing: known };
-    };
-
     const matches = (r: EligibilityRow) => (filter === 'all' ? true : filter === 'active' ? r.gap!.status !== 'closed' : r.gap!.status === filter);
     const visible = gapRows.filter(matches);
     const progress = stats.total ? Math.round((stats.closed / stats.total) * 100) : 0;
@@ -83,11 +104,11 @@ export default function TenderGaps({ tenderId }: { tenderId: string }) {
         <AppLayout
             breadcrumbs={[
                 { title: 'Tenders', href: '/tenders' },
-                { title: tender.reference, href: `/tenders/${tender.id}/eligibility` },
+                { title: tender.reference || tender.title, href: `/tenders/${tender.id}/eligibility` },
                 { title: 'Gap analysis', href: `/tenders/${tender.id}/gaps` },
             ]}
         >
-            <Head title={`Gap analysis · ${tender.reference}`} />
+            <Head title={`Gap analysis · ${tender.reference || tender.title}`} />
 
             <div className="flex w-full flex-1 flex-col gap-6 p-4 sm:p-6 lg:px-8">
                 <TenderHeader
@@ -108,6 +129,8 @@ export default function TenderGaps({ tenderId }: { tenderId: string }) {
                         </>
                     }
                 />
+
+                {notice}
 
                 {/* Summary */}
                 <section aria-label="Gap summary" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -226,7 +249,7 @@ export default function TenderGaps({ tenderId }: { tenderId: string }) {
                                                 row={r}
                                                 workingDaysLeft={workingDaysLeft}
                                                 canEdit={canEdit(role)}
-                                                onStatusChange={(s) => setGapStatus(r.gap!.id, s)}
+                                                onStatusChange={(s) => onStatusChange(r, s)}
                                                 onUpload={r.gap!.evidence ? () => setUpload({ open: true, target: uploadTargetFor(r) }) : undefined}
                                                 style={{ animationDelay: `${i * 50}ms` }}
                                             />

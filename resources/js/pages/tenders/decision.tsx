@@ -11,7 +11,7 @@ import { formatDate, formatMoney } from '@/lib/ebis';
 import { isOwner } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
-import type { DecisionOutcome } from '@/types/ebis';
+import type { DecisionOutcome, EligibilityRow, GoNoGoDecision, Tender } from '@/types/ebis';
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
@@ -59,15 +59,45 @@ const toneIcon: Record<FactorTone, { icon: typeof CircleCheck; className: string
 
 const shortDate = (d: Date) => new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).format(d);
 
+/** What the decision form records; who and when are added by whoever saves it. */
+export type DecisionInput = Pick<GoNoGoDecision, 'outcome' | 'reason' | 'acknowledgedBlockers' | 'conditions'>;
+
+/** Sample tenders: the decision lives in the in-memory workspace. */
 export default function TenderDecision({ tenderId }: { tenderId: string }) {
-    const { role, auth } = usePage<SharedData>().props;
+    const { auth } = usePage<SharedData>().props;
     const tender = findTender(tenderId);
     const { rows, decision, setDecision } = useTenderWorkspace(tenderId);
 
-    const rec = useMemo(() => (tender ? recommend(rows, tender) : null), [rows, tender]);
-    const score = useMemo(() => computeStats(rows).score, [rows]);
+    if (!tender) return <TenderNotFound />;
 
-    if (!tender || !rec) return <TenderNotFound />;
+    return (
+        <DecisionScreen
+            tender={tender}
+            rows={rows}
+            decision={decision}
+            onDecide={(d) => setDecision({ ...d, decidedBy: auth.user.name, decidedAt: new Date().toISOString() })}
+            onChange={() => setDecision(undefined)}
+        />
+    );
+}
+
+/** Stage 6 (DEC-01/02): recommendation, factors, conditions and the decision itself. */
+export function DecisionScreen({
+    tender,
+    rows,
+    decision,
+    onDecide,
+    onChange,
+}: {
+    tender: Tender;
+    rows: EligibilityRow[];
+    decision?: GoNoGoDecision;
+    onDecide: (decision: DecisionInput) => void;
+    onChange: () => void;
+}) {
+    const { role } = usePage<SharedData>().props;
+    const rec = useMemo(() => recommend(rows, tender), [rows, tender]);
+    const score = useMemo(() => computeStats(rows).score, [rows]);
 
     const style = verdictStyle[rec.verdict];
     const VerdictIcon = style.icon;
@@ -76,11 +106,11 @@ export default function TenderDecision({ tenderId }: { tenderId: string }) {
         <AppLayout
             breadcrumbs={[
                 { title: 'Tenders', href: '/tenders' },
-                { title: tender.reference, href: `/tenders/${tender.id}/eligibility` },
+                { title: tender.reference || tender.title, href: `/tenders/${tender.id}/eligibility` },
                 { title: 'Go / No-Go', href: `/tenders/${tender.id}/decision` },
             ]}
         >
-            <Head title={`Go / No-Go · ${tender.reference}`} />
+            <Head title={`Go / No-Go · ${tender.reference || tender.title}`} />
 
             <div className="flex w-full flex-1 flex-col gap-6 p-4 sm:p-6 lg:px-8">
                 <TenderHeader
@@ -232,7 +262,7 @@ export default function TenderDecision({ tenderId }: { tenderId: string }) {
                                 reason={decision.reason}
                                 conditions={decision.conditions ?? []}
                                 canChange={isOwner(role)}
-                                onChange={() => setDecision(undefined)}
+                                onChange={onChange}
                                 continueHref={route('tenders.compliance', tender.id)}
                             />
                         ) : isOwner(role) ? (
@@ -241,7 +271,7 @@ export default function TenderDecision({ tenderId }: { tenderId: string }) {
                                 blockers={[...rec.lateBlockers, ...rec.conditions].map((r) => ({ id: r.gap!.id, title: r.gap!.title }))}
                                 tenderValue={formatMoney(tender.estimatedValue)}
                                 onSubmit={(outcome, reason, acknowledged) =>
-                                    setDecision({
+                                    onDecide({
                                         outcome,
                                         reason,
                                         acknowledgedBlockers: acknowledged,
@@ -251,8 +281,6 @@ export default function TenderDecision({ tenderId }: { tenderId: string }) {
                                                       (r) => `${r.gap!.title} by ${shortDate(addWorkingDays(new Date(), r.gap!.timeToCloseDays))}`,
                                                   )
                                                 : [],
-                                        decidedBy: auth.user.name,
-                                        decidedAt: new Date().toISOString(),
                                     })
                                 }
                             />
