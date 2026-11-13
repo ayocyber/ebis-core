@@ -196,8 +196,8 @@ export interface Assessment {
     evidence: Evidence;
     assessedAt: ISODate;
     assessedBy: 'ebis-engine' | string;
-    /** ELG-05: 'rule' for hard criteria, 'ai' for judgement calls (confidence applies) */
-    method: 'rule' | 'ai';
+    /** 'rule' for hard criteria, 'user' when there is no rule and the user decides, 'ai' for judgement calls (ELG-05) */
+    method: 'rule' | 'ai' | 'user';
     /** EVD-02: evidence that expires before the tender deadline */
     stale?: { factLabel: string; expiresAt: ISODate };
     reviewed: boolean;

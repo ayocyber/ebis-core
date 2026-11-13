@@ -4,20 +4,26 @@ import { EvidenceDrawer } from '@/components/eligibility/evidence-drawer';
 import { logEvent } from '@/hooks/use-audit';
 import { statusMeta } from '@/lib/ebis';
 import type { AssessmentStatus, EligibilityRow } from '@/types/ebis';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface Props {
     initialRows: EligibilityRow[];
     canEdit: boolean;
     currentUserName: string;
+    /** Real tenders: save to the server instead of changing local state. Fresh rows arrive as props. */
+    onOverride?: (row: EligibilityRow, status: AssessmentStatus, reason: string) => void;
+    onToggleReviewed?: (row: EligibilityRow) => void;
 }
 
 /**
  * Stage 4 — the eligibility matrix with its summary and evidence drawer.
- * Owns filter, selection and (for now, local) override state.
+ * Owns filter and selection. Overrides are local on sample tenders and saved
+ * through `onOverride` / `onToggleReviewed` on real ones.
  */
-export function EligibilityDashboard({ initialRows, canEdit, currentUserName }: Props) {
+export function EligibilityDashboard({ initialRows, canEdit, currentUserName, onOverride, onToggleReviewed }: Props) {
     const [rows, setRows] = useState(initialRows);
+    // The server sends new rows after a change or a re-run.
+    useEffect(() => setRows(initialRows), [initialRows]);
     const [filters, setFilters] = useState<MatrixFilters>(defaultFilters);
     const [shortcut, setShortcut] = useState<SummaryShortcut | null>(null);
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -75,6 +81,7 @@ export function EligibilityDashboard({ initialRows, canEdit, currentUserName }: 
 
     const handleOverride = (id: string, status: AssessmentStatus, reason: string) => {
         const row = rows.find((r) => r.requirement.id === id);
+        if (row && onOverride) return onOverride(row, status, reason);
         if (row)
             logEvent({
                 category: 'override',
@@ -101,6 +108,7 @@ export function EligibilityDashboard({ initialRows, canEdit, currentUserName }: 
 
     const handleToggleReviewed = (id: string) => {
         const row = rows.find((r) => r.requirement.id === id);
+        if (row && onToggleReviewed) return onToggleReviewed(row);
         if (row)
             logEvent({
                 category: 'assessment',

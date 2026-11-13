@@ -4,6 +4,7 @@ use App\Enums\TenderStage;
 use App\Http\Controllers\AcceptInvitationController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\CompanyProfileController;
+use App\Http\Controllers\EligibilityController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\RequirementController;
 use App\Http\Controllers\TenantSwitchController;
@@ -88,9 +89,20 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     Route::delete('tenders/{tender}/requirements/{requirement}', [RequirementController::class, 'destroy'])
         ->whereUuid(['tender', 'requirement'])->name('tenders.requirements.destroy');
 
+    // Eligibility check of a real tender (M4).
+    Route::post('tenders/{tender}/eligibility', [EligibilityController::class, 'run'])
+        ->whereUuid('tender')->name('tenders.eligibility.run');
+    Route::post('tenders/{tender}/assessments/{assessment}/override', [EligibilityController::class, 'override'])
+        ->whereUuid(['tender', 'assessment'])->name('tenders.assessments.override');
+    Route::post('tenders/{tender}/assessments/{assessment}/review', [EligibilityController::class, 'review'])
+        ->whereUuid(['tender', 'assessment'])->name('tenders.assessments.review');
+
     // Stage pages. Sample tenders (tnd-001…) show the preview built on sample data.
     // Real tenders (UUIDs) use the real page where one exists, otherwise their tender page.
-    $real = ['requirements' => [RequirementController::class, 'index']];
+    $real = [
+        'requirements' => [RequirementController::class, 'index'],
+        'eligibility' => [EligibilityController::class, 'index'],
+    ];
     foreach (['eligibility', 'gaps', 'decision', 'compliance', 'bid', 'requirements', 'documents', 'validation'] as $stage) {
         Route::get("tenders/{tender}/{$stage}", function (string $tender) use ($stage, $real) {
             if (Str::isUuid($tender)) {

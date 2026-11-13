@@ -14,6 +14,21 @@ enum VaultCategory: string
     case Policy = 'policy';
     case Other = 'other';
 
+    /** One document of this type, lower case, e.g. "case study". */
+    public function noun(): string
+    {
+        return match ($this) {
+            self::Company => 'company document',
+            self::Certificate => 'certificate',
+            self::Insurance => 'insurance document',
+            self::Financial => 'financial document',
+            self::Experience => 'case study',
+            self::People => 'CV',
+            self::Policy => 'policy',
+            self::Other => 'document',
+        };
+    }
+
     /** The kind of profile fact a document of this type proves. */
     public function factSource(): ProfileFactSource
     {

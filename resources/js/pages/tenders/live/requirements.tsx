@@ -175,8 +175,22 @@ export default function LiveRequirements({
                         <Scale className="text-primary size-4" /> Next: eligibility check
                     </p>
                     <p className="text-muted-foreground mt-1.5 text-sm">
-                        Coming next: ProcurPilot checks each confirmed requirement against your company profile and vault, using the rule shown on it.
+                        {requirements.length
+                            ? `ProcurPilot checks each of the ${requirements.length} confirmed requirements against your company profile and vault, using the rule shown on it.`
+                            : 'Confirm at least one requirement, then check it against your company profile and vault.'}
                     </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        {editable && requirements.length > 0 && (
+                            <Button size="sm" disabled={busy} onClick={() => post(route('tenders.eligibility.run', tender.id))}>
+                                <Scale className="size-4" /> Check eligibility
+                            </Button>
+                        )}
+                        {tender.stage !== 'requirements' && tender.stage !== 'extraction' && (
+                            <Button size="sm" variant="outline" asChild>
+                                <Link href={route('tenders.eligibility', tender.id)}>See the last check</Link>
+                            </Button>
+                        )}
+                    </div>
                 </section>
             </div>
 

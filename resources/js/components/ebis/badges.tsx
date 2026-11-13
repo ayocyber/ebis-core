@@ -2,7 +2,7 @@ import { categoryMeta, deadlineLabel, deadlineTone, formatDate, severityMeta, st
 import { AI_REVIEW_THRESHOLD, methodMeta } from '@/lib/rules';
 import { cn } from '@/lib/utils';
 import type { AssessmentStatus, GapSeverity, RequirementCategory } from '@/types/ebis';
-import { Bot, Clock, Hourglass, Scale } from 'lucide-react';
+import { Bot, Clock, Hourglass, Scale, UserRound } from 'lucide-react';
 import * as React from 'react';
 
 const pillBase = 'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset';
@@ -53,11 +53,21 @@ export function MethodBadge({
     reviewed,
     className,
 }: {
-    method: 'rule' | 'ai';
+    method: 'rule' | 'ai' | 'user';
     confidence: number;
     reviewed?: boolean;
     className?: string;
 }) {
+    if (method === 'user') {
+        return (
+            <span
+                className={cn(pillBase, 'bg-muted text-muted-foreground ring-border rounded-md', className)}
+                title="No automatic rule: you set the status."
+            >
+                <UserRound className="size-3" aria-hidden /> Your call
+            </span>
+        );
+    }
     if (method === 'rule') {
         return (
             <span className={cn(pillBase, 'bg-muted text-muted-foreground ring-border rounded-md', className)} title={methodMeta.rule.hint}>
