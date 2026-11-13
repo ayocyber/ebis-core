@@ -33,6 +33,13 @@ class DemoSeeder extends Seeder
         /** @var array{profile: array<string, mixed>, documents: list<array<string, mixed>>} $data */
         $data = json_decode((string) file_get_contents(__DIR__.'/data/bluewave.json'), true, flags: JSON_THROW_ON_ERROR);
 
+        // Safe to run on every deploy: skip if the demo company already exists.
+        if (Tenant::where('name', $data['profile']['legalName'])->exists()) {
+            $this->command?->info('Demo company already exists; skipping.');
+
+            return;
+        }
+
         $owner = $this->person('Emma Richardson');
         $tenant = Tenant::create(['name' => $data['profile']['legalName'], 'created_by' => $owner->id]);
         $tenant->addMember($owner, TenantRole::Owner);
@@ -95,7 +102,8 @@ class DemoSeeder extends Seeder
 
         return User::firstOrCreate(['email' => $email], [
             'name' => $name,
-            'password' => 'password',
+            // Set DEMO_PASSWORD on any public server; "password" is for local use only.
+            'password' => env('DEMO_PASSWORD', 'password'),
             'email_verified_at' => now(),
         ]);
     }
