@@ -4,11 +4,11 @@ import { TenderHeader } from '@/components/ebis/tender-header';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AppLayout from '@/layouts/app-layout';
-import { formatBytes, formatDate } from '@/lib/ebis';
+import { formatBytes, formatDate, stageIndex } from '@/lib/ebis';
 import { canEdit } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
-import type { Tender, TenderDocument } from '@/types/ebis';
+import type { Tender, TenderDocument, TenderStage } from '@/types/ebis';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
     AlertTriangle,
@@ -22,7 +22,6 @@ import {
     Pencil,
     RotateCw,
     ScanText,
-    Sparkles,
     Trash2,
     XCircle,
 } from 'lucide-react';
@@ -306,13 +305,39 @@ function NextStep({ tender, counts }: { tender: Tender; counts: { confirmed: num
                     {suggested > 0 ? 'Review requirements' : 'Open requirements'} <ArrowRight className="size-3.5" />
                 </Link>
             </Button>
-            <Link
-                href={route('tenders.eligibility', 'tnd-001')}
-                className="text-muted-foreground hover:text-foreground mt-3 flex items-center gap-1 text-xs font-medium"
-            >
-                <Sparkles className="size-3.5" /> See the later stages on a sample tender
-            </Link>
+            <StageLinks tender={tender} />
         </section>
+    );
+}
+
+/** Every stage this tender has reached, so you can go back to any of them. */
+function StageLinks({ tender }: { tender: Tender }) {
+    const at = stageIndex(tender.stage);
+    const links: { stage: TenderStage; label: string; route: string }[] = [
+        { stage: 'eligibility', label: 'Eligibility check', route: 'tenders.eligibility' },
+        { stage: 'eligibility', label: 'Gap plan', route: 'tenders.gaps' },
+        { stage: 'eligibility', label: 'Go / No-Go', route: 'tenders.decision' },
+        { stage: 'compliance', label: 'Compliance matrix', route: 'tenders.compliance' },
+        { stage: 'compliance', label: 'Write the bid', route: 'tenders.bid' },
+        { stage: 'compliance', label: 'Documents checklist', route: 'tenders.documents' },
+    ];
+    const reached = links.filter((l) => at >= stageIndex(l.stage));
+
+    if (!reached.length) return null;
+
+    return (
+        <nav aria-label="Stages" className="mt-4 border-t pt-3">
+            <p className="text-muted-foreground mb-1.5 text-xs font-medium">Go to</p>
+            <ul className="space-y-1">
+                {reached.map((l) => (
+                    <li key={l.route}>
+                        <Link href={route(l.route, tender.id)} className="text-primary flex items-center gap-1 text-sm font-medium hover:underline">
+                            {l.label} <ArrowRight className="size-3.5" />
+                        </Link>
+                    </li>
+                ))}
+            </ul>
+        </nav>
     );
 }
 

@@ -73,7 +73,7 @@ export const slug = (s: string) => s.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|
 
 /** e.g. NCC-ICT-2026-014_Bluewave-Networks_Form01_FormOfTender.pdf */
 export function exportName(item: ChecklistItem, tender: Tender, supplier: string): string {
-    return `${slug(tender.reference)}_${slug(supplier)}_${item.fileStem}.${item.formats[0]}`;
+    return `${slug(tender.reference || tender.title)}_${slug(supplier)}_${item.fileStem}.${item.formats[0]}`;
 }
 
 export function formFields(item: ChecklistItem, progress: ChecklistProgress) {

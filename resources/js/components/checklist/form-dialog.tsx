@@ -16,16 +16,28 @@ export function FormDialog({
     userName,
     onOpenChange,
     onSave,
+    onUploadFile,
 }: {
     entry: ResolvedItem | null;
     userName: string;
     onOpenChange: (open: boolean) => void;
     onSave: (patch: ChecklistProgress) => void;
+    /** Real tenders upload the signed copy itself; without this only its name is kept */
+    onUploadFile?: (file: File) => void;
 }) {
     return (
         <Dialog open={!!entry} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-xl">
-                {entry && <FormBody key={entry.item.id} entry={entry} userName={userName} onSave={onSave} onCancel={() => onOpenChange(false)} />}
+                {entry && (
+                    <FormBody
+                        key={entry.item.id}
+                        entry={entry}
+                        userName={userName}
+                        onSave={onSave}
+                        onUploadFile={onUploadFile}
+                        onCancel={() => onOpenChange(false)}
+                    />
+                )}
             </DialogContent>
         </Dialog>
     );
@@ -35,11 +47,13 @@ function FormBody({
     entry,
     userName,
     onSave,
+    onUploadFile,
     onCancel,
 }: {
     entry: ResolvedItem;
     userName: string;
     onSave: (patch: ChecklistProgress) => void;
+    onUploadFile?: (file: File) => void;
     onCancel: () => void;
 }) {
     const { item, progress } = entry;
@@ -147,6 +161,7 @@ function FormBody({
                                 if (f) {
                                     setFileName(f.name);
                                     setSizeBytes(f.size);
+                                    onUploadFile?.(f);
                                 }
                                 e.target.value = '';
                             }}

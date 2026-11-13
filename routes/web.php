@@ -4,6 +4,7 @@ use App\Enums\TenderStage;
 use App\Http\Controllers\AcceptInvitationController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\BidController;
+use App\Http\Controllers\ChecklistController;
 use App\Http\Controllers\CompanyProfileController;
 use App\Http\Controllers\EligibilityController;
 use App\Http\Controllers\GapDecisionController;
@@ -129,6 +130,14 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     Route::post('tenders/{tender}/compliance/map', [BidController::class, 'map'])
         ->whereUuid('tender')->name('tenders.compliance.map');
 
+    // Documents checklist of a real tender (M6, BID-02/06).
+    Route::patch('tenders/{tender}/checklist/{item}', [ChecklistController::class, 'update'])
+        ->whereUuid(['tender', 'item'])->name('tenders.checklist.update');
+    Route::post('tenders/{tender}/checklist/{item}/file', [ChecklistController::class, 'upload'])
+        ->whereUuid(['tender', 'item'])->name('tenders.checklist.upload');
+    Route::get('tenders/{tender}/checklist/{item}/file', [ChecklistController::class, 'download'])
+        ->whereUuid(['tender', 'item'])->name('tenders.checklist.download');
+
     // Stage pages. Sample tenders (tnd-001…) show the preview built on sample data.
     // Real tenders (UUIDs) use the real page where one exists, otherwise their tender page.
     $real = [
@@ -138,6 +147,7 @@ Route::middleware(['auth', 'tenant'])->group(function () {
         'decision' => [GapDecisionController::class, 'decision'],
         'compliance' => [BidController::class, 'compliance'],
         'bid' => [BidController::class, 'bid'],
+        'documents' => [ChecklistController::class, 'index'],
     ];
     foreach (['eligibility', 'gaps', 'decision', 'compliance', 'bid', 'requirements', 'documents', 'validation'] as $stage) {
         Route::get("tenders/{tender}/{$stage}", function (string $tender) use ($stage, $real) {

@@ -19,28 +19,54 @@ import {
 import { canEdit } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
-import type { ChecklistProgress, MissingEvidence } from '@/types/ebis';
+import type { ChecklistProgress, MissingEvidence, Tender } from '@/types/ebis';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, ArrowRight, FileText, FolderOpen, Info, PenLine, RefreshCw, Trash2, Undo2, UploadCloud, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Download, FileText, FolderOpen, Info, PenLine, RefreshCw, Trash2, Undo2, UploadCloud, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 
+/** Sample tenders: progress stays in memory and uploads only record the file name. */
 export default function TenderDocuments({ tenderId }: { tenderId: string }) {
-    const { role, auth } = usePage<SharedData>().props;
     const tender = findTender(tenderId);
     const { documents, vault, supplier, updateChecklist } = useChecklist(tenderId, tender);
+
+    if (!tender) return <TenderNotFound />;
+
+    return <DocumentsScreen tender={tender} documents={documents} supplier={supplier} missing={vault.missing} onSave={updateChecklist} />;
+}
+
+/** Stage 7 (BID-02, BID-06): every form and file the buyer wants, and where each stands. */
+export function DocumentsScreen({
+    tender,
+    documents,
+    supplier,
+    missing,
+    onSave,
+    onUploadFile,
+    fileHref,
+}: {
+    tender: Tender;
+    documents: ResolvedItem[];
+    supplier: string;
+    missing: MissingEvidence[];
+    onSave: (itemId: string, patch: ChecklistProgress | null) => void;
+    /** Real tenders upload the file itself; without this only its name is recorded */
+    onUploadFile?: (itemId: string, file: File) => void;
+    /** Where an uploaded file can be downloaded */
+    fileHref?: (itemId: string) => string | undefined;
+}) {
+    const { role, auth } = usePage<SharedData>().props;
     const [filter, setFilter] = useState<ChecklistStatus | null>(null);
     const [formEntry, setFormEntry] = useState<ResolvedItem | null>(null);
     const [upload, setUpload] = useState<UploadTarget | null>(null);
     const editable = canEdit(role);
-
-    if (!tender) return <TenderNotFound />;
+    const vault = { missing };
 
     const counts = checklistCounts(documents);
     const needed = documents.length - counts.not_applicable;
     const pct = needed ? Math.round((counts.ready / needed) * 100) : 100;
     const visible = filter ? documents.filter((d) => d.status === filter) : documents;
 
-    const save = (itemId: string, patch: ChecklistProgress | null) => updateChecklist(itemId, patch);
+    const save = (itemId: string, patch: ChecklistProgress | null) => onSave(itemId, patch);
 
     const vaultUpload = (d: ResolvedItem) => {
         if (d.vaultDoc) return setUpload({ replace: d.vaultDoc });
@@ -53,11 +79,11 @@ export default function TenderDocuments({ tenderId }: { tenderId: string }) {
         <AppLayout
             breadcrumbs={[
                 { title: 'Tenders', href: '/tenders' },
-                { title: tender.reference, href: `/tenders/${tender.id}/eligibility` },
+                { title: tender.reference || tender.title, href: `/tenders/${tender.id}/eligibility` },
                 { title: 'Documents checklist', href: `/tenders/${tender.id}/documents` },
             ]}
         >
-            <Head title={`Documents · ${tender.reference}`} />
+            <Head title={`Documents · ${tender.reference || tender.title}`} />
 
             <div className="flex w-full flex-1 flex-col gap-6 p-4 sm:p-6 lg:px-8">
                 <TenderHeader
@@ -131,10 +157,9 @@ export default function TenderDocuments({ tenderId }: { tenderId: string }) {
                         <p className="text-muted-foreground flex items-start gap-2 text-xs leading-relaxed">
                             <Info className="mt-0.5 size-3.5 shrink-0" />
                             <span>
-                                Read from the tender’s submission instructions (ITT §7). When ProcurPilot builds the submission pack it renames every
-                                file to the buyer’s rule:{' '}
+                                Worked out from the tender’s documents and requirements. In the submission pack every file is named like this:{' '}
                                 <code className="bg-muted text-foreground rounded px-1 py-0.5 font-mono text-[11px]">
-                                    {slug(tender.reference)}_{slug(supplier)}_Document
+                                    {slug(tender.reference || tender.title)}_{slug(supplier)}_Document
                                 </code>
                             </span>
                         </p>
@@ -175,6 +200,8 @@ export default function TenderDocuments({ tenderId }: { tenderId: string }) {
                                         onFill={() => setFormEntry(d)}
                                         onVault={() => vaultUpload(d)}
                                         onSave={(patch) => save(d.item.id, patch)}
+                                        onUploadFile={onUploadFile ? (file) => onUploadFile(d.item.id, file) : undefined}
+                                        fileHref={fileHref?.(d.item.id)}
                                     />
                                 ))}
                             </ul>
@@ -189,6 +216,7 @@ export default function TenderDocuments({ tenderId }: { tenderId: string }) {
                 entry={formEntry}
                 userName={auth.user.name}
                 onOpenChange={(o) => !o && setFormEntry(null)}
+                onUploadFile={onUploadFile && formEntry ? (file) => onUploadFile(formEntry.item.id, file) : undefined}
                 onSave={(patch) => {
                     if (formEntry) save(formEntry.item.id, patch);
                     setFormEntry(null);
@@ -209,6 +237,8 @@ function Row({
     onFill,
     onVault,
     onSave,
+    onUploadFile,
+    fileHref,
 }: {
     entry: ResolvedItem;
     editable: boolean;
@@ -217,6 +247,8 @@ function Row({
     onFill: () => void;
     onVault: () => void;
     onSave: (patch: ChecklistProgress | null) => void;
+    onUploadFile?: (file: File) => void;
+    fileHref?: string;
 }) {
     const input = useRef<HTMLInputElement>(null);
     const meta = checklistStatusMeta[d.status];
@@ -323,6 +355,13 @@ function Row({
                 ) : (
                     editable && (
                         <>
+                            {d.progress.fileName && fileHref && (
+                                <Button size="icon" variant="ghost" className="size-8" asChild>
+                                    <a href={fileHref} aria-label={`Download ${d.progress.fileName}`} title="Download">
+                                        <Download className="size-4" />
+                                    </a>
+                                </Button>
+                            )}
                             {d.progress.fileName && (
                                 <Button
                                     size="icon"
@@ -345,7 +384,8 @@ function Row({
                                 className="sr-only"
                                 onChange={(e) => {
                                     const f = e.target.files?.[0];
-                                    if (f)
+                                    if (f && onUploadFile) onUploadFile(f);
+                                    else if (f)
                                         onSave({ fileName: f.name, sizeBytes: f.size, uploadedAt: new Date().toISOString(), uploadedBy: userName });
                                     e.target.value = '';
                                 }}
