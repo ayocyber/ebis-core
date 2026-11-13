@@ -66,7 +66,8 @@ return new class extends Migration
             $table->date('expires_at')->nullable();
             $table->text('summary')->nullable();
             // A renewal archives the version it replaces; the old row stays for the audit trail.
-            $table->foreignUuid('replaces_id')->nullable()->constrained('vault_documents')->nullOnDelete();
+            // Its foreign key is added below, once the primary key exists (Postgres needs that order).
+            $table->uuid('replaces_id')->nullable();
             $table->timestamp('archived_at')->nullable();
             // PRF-05: when the 90- and 30-day reminders went out, so each is sent once.
             $table->timestamp('alerted_90_at')->nullable();
@@ -76,6 +77,10 @@ return new class extends Migration
             $table->softDeletes();
             $table->index(['tenant_id', 'archived_at', 'expires_at']);
             $table->index(['tenant_id', 'sha256']);
+        });
+
+        Schema::table('vault_documents', function (Blueprint $table) {
+            $table->foreign('replaces_id')->references('id')->on('vault_documents')->nullOnDelete();
         });
 
         // PRF-03: every fact records its source document, dates and verification.
