@@ -61,21 +61,15 @@ services:
       - key: AWS_USE_PATH_STYLE_ENDPOINT
         value: "true"
 
-      # Email: Gmail SMTP with an app password (free, sends to anyone)
+      # Email: written to the Render logs for now (nothing is sent).
+      # To send real email with Gmail later, in Render → Environment set:
+      #   MAIL_MAILER=smtp  MAIL_HOST=smtp.gmail.com  MAIL_PORT=587
+      #   MAIL_ENCRYPTION=tls  MAIL_USERNAME / MAIL_FROM_ADDRESS = the Gmail address
+      #   MAIL_PASSWORD = the Gmail app password
       - key: MAIL_MAILER
-        value: smtp
-      - key: MAIL_HOST
-        value: smtp.gmail.com
-      - key: MAIL_PORT
-        value: "587"
-      - key: MAIL_ENCRYPTION
-        value: tls
-      - key: MAIL_USERNAME
-        sync: false
-      - key: MAIL_PASSWORD
-        sync: false
+        value: log
       - key: MAIL_FROM_ADDRESS
-        sync: false
+        value: no-reply@procurpilot.test
       - key: MAIL_FROM_NAME
         value: REA-NEP eProcurement
 
