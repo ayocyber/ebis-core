@@ -6,6 +6,7 @@ use App\Enums\AuditCategory;
 use App\Enums\ExtractionStatus;
 use App\Enums\TenderStage;
 use App\Http\Requests\Tenders\StoreTenderRequest;
+use App\Models\Requirement;
 use App\Models\Tender;
 use App\Models\TenderDocument;
 use App\Models\User;
@@ -68,8 +69,14 @@ class TenderController extends Controller
     {
         $tender = Tender::with(['creator', 'documents' => fn ($q) => $q->withoutText()])->findOrFail($tender);
 
+        $requirements = Requirement::where('tender_id', $tender->id)->get(['confirmed_at']);
+
         return Inertia::render('tenders/show', [
             'tender' => $tender->toFrontend(),
+            'requirementCounts' => [
+                'confirmed' => $requirements->whereNotNull('confirmed_at')->count(),
+                'suggested' => $requirements->whereNull('confirmed_at')->count(),
+            ],
         ]);
     }
 

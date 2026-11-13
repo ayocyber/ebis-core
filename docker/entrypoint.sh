@@ -13,6 +13,9 @@ php artisan view:cache
 
 php artisan migrate --force
 
+# Suggest requirements for tender documents read before that feature existed (idempotent).
+php artisan tenders:suggest-requirements
+
 # Load the demo company once (the seeder skips itself if it already exists).
 if [ "${DEMO_SEED:-false}" = "true" ]; then
     php artisan db:seed --class=DemoSeeder --force

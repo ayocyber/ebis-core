@@ -127,7 +127,22 @@ export interface Requirement {
     /** Percentage weight for scored requirements */
     weight?: number;
     source: SourceLocation & { quote: string };
+    /** How it is checked against the company; none means a judgement the user makes (real tenders) */
+    check?: RequirementCheck;
+    /** "found" in the tender text, typed by the user ("manual"), or read by AI (real tenders) */
+    origin?: 'found' | 'manual' | 'ai';
+    /** Suggestions are unconfirmed until the user accepts them */
+    confirmed?: boolean;
+    version?: number;
 }
+
+/** ELG-01: the rule that checks a hard criterion. */
+export type RequirementCheck =
+    | { type: 'turnover_min'; amount: number; years?: number }
+    | { type: 'insurance_min'; kind: 'public' | 'employers' | 'professional'; amount: number }
+    | { type: 'certification'; name: string }
+    | { type: 'years_trading'; years: number }
+    | { type: 'vault_documents'; category: VaultCategory; count?: number };
 
 /* ------------------------------------------------------------------ */
 /* Company profile facts (the "evidence" side)                         */

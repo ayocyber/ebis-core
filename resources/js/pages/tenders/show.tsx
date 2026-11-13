@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-export default function TenderShow({ tender }: { tender: Tender }) {
+export default function TenderShow({ tender, requirementCounts }: { tender: Tender; requirementCounts: { confirmed: number; suggested: number } }) {
     const { role } = usePage<SharedData>().props;
     const editable = canEdit(role);
     const [editing, setEditing] = useState(false);
@@ -151,7 +151,7 @@ export default function TenderShow({ tender }: { tender: Tender }) {
                     </div>
 
                     <aside className="space-y-6">
-                        <NextStep />
+                        <NextStep tender={tender} counts={requirementCounts} />
                         <DetailsCard tender={tender} />
                     </aside>
                 </div>
@@ -287,21 +287,30 @@ function pageList(pages: number[]): string {
     return `${pages.slice(0, -1).join(', ')} and ${pages[pages.length - 1]}`;
 }
 
-function NextStep() {
+function NextStep({ tender, counts }: { tender: Tender; counts: { confirmed: number; suggested: number } }) {
+    const { confirmed, suggested } = counts;
     return (
         <section className="from-primary/8 animate-fade-up rounded-2xl border bg-gradient-to-br to-transparent p-5 [animation-delay:120ms]">
             <p className="flex items-center gap-2 text-sm font-semibold">
                 <ListChecks className="text-primary size-4" /> Next: requirements
             </p>
             <p className="text-muted-foreground mt-1.5 text-sm">
-                Coming soon: ProcurPilot will pull every requirement out of these documents, with the page and clause it came from, then check each
-                one against your vault.
+                {suggested > 0
+                    ? `ProcurPilot found ${suggested} possible requirement${suggested > 1 ? 's' : ''} in these documents. Check them and add anything it missed.`
+                    : confirmed > 0
+                      ? `${confirmed} requirement${confirmed > 1 ? 's' : ''} confirmed.`
+                      : 'List what the buyer asks for. Each one is then checked against your company profile and vault.'}
             </p>
+            <Button size="sm" className="mt-3" asChild>
+                <Link href={route('tenders.requirements', tender.id)}>
+                    {suggested > 0 ? 'Review requirements' : 'Open requirements'} <ArrowRight className="size-3.5" />
+                </Link>
+            </Button>
             <Link
                 href={route('tenders.eligibility', 'tnd-001')}
-                className="text-primary mt-3 inline-flex items-center gap-1 text-sm font-medium hover:underline"
+                className="text-muted-foreground hover:text-foreground mt-3 flex items-center gap-1 text-xs font-medium"
             >
-                <Sparkles className="size-3.5" /> See it on a sample tender <ArrowRight className="size-3.5" />
+                <Sparkles className="size-3.5" /> See the later stages on a sample tender
             </Link>
         </section>
     );

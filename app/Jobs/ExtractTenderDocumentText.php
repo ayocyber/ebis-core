@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Enums\ExtractionStatus;
 use App\Models\Tenant;
 use App\Models\TenderDocument;
+use App\Support\Requirements\RequirementBook;
 use App\Support\Tenancy\CurrentTenant;
 use App\Support\Tenders\ExtractionResult;
 use App\Support\Tenders\TextExtractor;
@@ -25,14 +26,14 @@ class ExtractTenderDocumentText implements ShouldQueue
 
     public function __construct(public string $tenantId, public string $documentId) {}
 
-    public function handle(TextExtractor $extractor, CurrentTenant $current): void
+    public function handle(TextExtractor $extractor, CurrentTenant $current, RequirementBook $book): void
     {
         $tenant = Tenant::find($this->tenantId);
         if ($tenant === null) {
             return;
         }
 
-        $current->runAs($tenant, function () use ($extractor) {
+        $current->runAs($tenant, function () use ($extractor, $book) {
             $doc = TenderDocument::with('tender')->find($this->documentId);
             if ($doc === null) {
                 return;
@@ -48,6 +49,9 @@ class ExtractTenderDocumentText implements ShouldQueue
                 'extraction_error' => $result->error,
                 'extracted_at' => now(),
             ])->save();
+
+            // Suggest requirements from the new text for the user to confirm (TUN-01).
+            $book->suggestFrom($doc);
 
             $doc->tender->refreshStage();
         });

@@ -5,6 +5,7 @@ use App\Http\Controllers\AcceptInvitationController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\CompanyProfileController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\RequirementController;
 use App\Http\Controllers\TenantSwitchController;
 use App\Http\Controllers\TenderController;
 use App\Http\Controllers\VaultDocumentController;
@@ -77,12 +78,25 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     Route::post('tenders/{tender}/documents/{document}/retry', [TenderController::class, 'retryExtraction'])
         ->whereUuid(['tender', 'document'])->name('tenders.documents.retry');
 
-    // Later stages: a preview on the sample tenders until M3–M7 land. Real tenders
-    // (UUIDs) don't have these stages yet, so they go to their own page instead.
+    // Requirements of a real tender (TUN-01/02/03).
+    Route::post('tenders/{tender}/requirements', [RequirementController::class, 'store'])
+        ->whereUuid('tender')->name('tenders.requirements.store');
+    Route::post('tenders/{tender}/requirements/confirm/{requirement?}', [RequirementController::class, 'confirm'])
+        ->whereUuid(['tender', 'requirement'])->name('tenders.requirements.confirm');
+    Route::patch('tenders/{tender}/requirements/{requirement}', [RequirementController::class, 'update'])
+        ->whereUuid(['tender', 'requirement'])->name('tenders.requirements.update');
+    Route::delete('tenders/{tender}/requirements/{requirement}', [RequirementController::class, 'destroy'])
+        ->whereUuid(['tender', 'requirement'])->name('tenders.requirements.destroy');
+
+    // Stage pages. Sample tenders (tnd-001…) show the preview built on sample data.
+    // Real tenders (UUIDs) use the real page where one exists, otherwise their tender page.
+    $real = ['requirements' => [RequirementController::class, 'index']];
     foreach (['eligibility', 'gaps', 'decision', 'compliance', 'bid', 'requirements', 'documents', 'validation'] as $stage) {
-        Route::get("tenders/{tender}/{$stage}", function (string $tender) use ($stage) {
+        Route::get("tenders/{tender}/{$stage}", function (string $tender) use ($stage, $real) {
             if (Str::isUuid($tender)) {
-                return to_route('tenders.show', $tender);
+                return isset($real[$stage])
+                    ? app()->call([app($real[$stage][0]), $real[$stage][1]], ['tender' => $tender])
+                    : to_route('tenders.show', $tender);
             }
 
             return Inertia::render("tenders/{$stage}", ['tenderId' => $tender]);
