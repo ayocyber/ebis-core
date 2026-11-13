@@ -1,8 +1,5 @@
-import { ResultsChart } from '@/components/dashboard/results-chart';
 import { DeadlineChip } from '@/components/ebis/badges';
 import { Button } from '@/components/ui/button';
-import { results } from '@/data/mock-dashboard';
-import { tenders } from '@/data/mock-ebis';
 import { type AuditEvent, useAudit } from '@/hooks/use-audit';
 import { useWorkspaces } from '@/hooks/use-tender-workspace';
 import { useVault } from '@/hooks/use-vault';
@@ -22,17 +19,19 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
 
 const gbp = (amount: number) => formatMoney({ amount, currency: 'GBP' });
 
-export default function Dashboard() {
+export default function Dashboard({ tenders }: { tenders: Tender[] }) {
     const { tenant, role, auth } = usePage<SharedData>().props;
     const now = useMemo(() => new Date(), []);
     const [showAll, setShowAll] = useState(false);
 
-    const live = useMemo(() => tenders.filter((t) => t.stage !== 'submitted').sort((a, b) => +new Date(a.deadline) - +new Date(b.deadline)), []);
+    // Real tenders only (the server leaves out submitted ones, soonest deadline first).
+    const live = tenders;
     const views = useWorkspaces(live.map((t) => t.id));
     const vault = useVault();
     const activity = useAudit(usePage<SharedData & { recentActivity: AuditEvent[] }>().props.recentActivity).slice(0, 5);
 
-    const items = attentionItems(live, views, vault.documents, vault.missing, now);
+    // "Missing documents" comes from the sample tenders until requirements are real (M4), so it is left out here.
+    const items = attentionItems(live, views, vault.documents, [], now);
     const shown = showAll ? items : items.slice(0, 5);
 
     // KPIs
@@ -43,10 +42,6 @@ export default function Dashboard() {
     const expiry = vault.documents.map((d) => expiryState(d, now).state);
     const expired = expiry.filter((s) => s === 'expired').length;
     const expiring = expiry.filter((s) => s === 'expiring').length;
-
-    const won = results.reduce((s, r) => s + r.won, 0);
-    const decided = results.reduce((s, r) => s + r.won + r.lost, 0);
-    const wonValue = results.reduce((s, r) => s + r.wonValue, 0);
 
     const firstName = auth.user.name.split(' ')[0];
 
@@ -198,11 +193,28 @@ export default function Dashboard() {
                                     All tenders <ArrowUpRight className="size-3.5" />
                                 </Link>
                             </header>
-                            <ul className="divide-y">
-                                {live.map((t) => (
-                                    <BidRow key={t.id} tender={t} status={bidStatus(t, views[t.id], vault.documents)} now={now} />
-                                ))}
-                            </ul>
+                            {live.length === 0 ? (
+                                <div className="flex flex-col items-center gap-2 px-5 py-10 text-center">
+                                    <Layers className="text-muted-foreground size-8" />
+                                    <p className="font-medium">No tenders yet</p>
+                                    <p className="text-muted-foreground max-w-sm text-sm">
+                                        Upload a tender pack and ProcurPilot reads every document, ready for the requirements check.
+                                    </p>
+                                    {canEdit(role) && (
+                                        <Button asChild size="sm" className="mt-2">
+                                            <Link href={route('tenders.index')}>
+                                                <Upload className="size-4" /> Upload a tender
+                                            </Link>
+                                        </Button>
+                                    )}
+                                </div>
+                            ) : (
+                                <ul className="divide-y">
+                                    {live.map((t) => (
+                                        <BidRow key={t.id} tender={t} status={bidStatus(t, views[t.id], vault.documents)} now={now} />
+                                    ))}
+                                </ul>
+                            )}
                         </section>
                     </div>
 
@@ -221,23 +233,14 @@ export default function Dashboard() {
                                     <h2 id="results-title" className="font-semibold tracking-tight">
                                         Results
                                     </h2>
-                                    <p className="text-muted-foreground text-xs">Last 4 quarters</p>
+                                    <p className="text-muted-foreground text-xs">Win rate and contract value won</p>
                                 </div>
                                 <Trophy className="text-muted-foreground size-4" />
                             </div>
-                            <div className="mb-5 grid grid-cols-2 gap-3">
-                                <div>
-                                    <p className="text-2xl font-semibold tracking-tight tabular-nums">{Math.round((won / decided) * 100)}%</p>
-                                    <p className="text-muted-foreground text-xs">
-                                        Win rate · {won} of {decided}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-2xl font-semibold tracking-tight tabular-nums">{gbp(wonValue)}</p>
-                                    <p className="text-muted-foreground text-xs">Contract value won</p>
-                                </div>
-                            </div>
-                            <ResultsChart data={results} />
+                            {/* No outcomes are recorded yet; this fills in once bids are signed off and won or lost. */}
+                            <p className="text-muted-foreground text-sm">
+                                No results yet. Once you submit bids and record whether you won, your win rate and contract value show here.
+                            </p>
                         </section>
 
                         <section aria-labelledby="activity-title" className="bg-card animate-fade-up rounded-2xl border p-5 [animation-delay:260ms]">

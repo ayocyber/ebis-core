@@ -8,7 +8,7 @@ import { resolveChecklist } from '@/lib/checklist';
 import { recommend } from '@/lib/decision';
 import { daysUntil, formatDate, stageIndex, stageRoute } from '@/lib/ebis';
 import { readinessIssues, readinessScore } from '@/lib/readiness';
-import { expiryState, usageFor } from '@/lib/vault';
+import { expiryState } from '@/lib/vault';
 import type { MissingEvidence, Tender, VaultDocument } from '@/types/ebis';
 
 export type AttentionTone = 'critical' | 'warning' | 'info';
@@ -128,8 +128,8 @@ export function attentionItems(
             items.push({
                 id: `reqs-${t.id}`,
                 tone: 'info',
-                title: `Requirements ready to check for ${t.reference}`,
-                detail: 'ProcurPilot has pulled out the requirements. Confirm them to run the eligibility check.',
+                title: `Requirements to confirm for ${t.reference || t.title}`,
+                detail: 'The documents have been read. Add or confirm the requirements to run the eligibility check.',
                 action: 'Check',
                 href: tenderRoute(stageRoute(t.stage), t),
                 tender: t,
@@ -154,19 +154,30 @@ export function attentionItems(
         }
     }
 
-    // Vault: expired documents that live bids depend on
+    // Vault: from the real documents only. Linking them to the bids that rely on
+    // them needs real requirements (M4), so the warnings are about the vault itself.
     const expired = documents.filter((d) => expiryState(d, now).state === 'expired');
-    const blocking = expired.filter((d) => usageFor(d.factIds).length > 0);
-    if (blocking.length) {
-        const bids = new Set(blocking.flatMap((d) => usageFor(d.factIds).map((u) => u.tender.id))).size;
+    if (expired.length) {
         items.push({
             id: 'vault-expired',
             tone: 'critical',
-            title: `${blocking.length} expired document${blocking.length > 1 ? 's' : ''} affect${blocking.length > 1 ? '' : 's'} ${bids} live bid${bids > 1 ? 's' : ''}`,
-            detail: blocking.map((d) => d.title).join(' · '),
+            title: `${expired.length} document${expired.length > 1 ? 's' : ''} in your vault ${expired.length > 1 ? 'have' : 'has'} expired`,
+            detail: expired.map((d) => d.title).join(' · '),
             action: 'Renew',
             href: route('vault.index'),
             order: 0,
+        });
+    }
+    const expiring = documents.filter((d) => expiryState(d, now).state === 'expiring');
+    if (expiring.length) {
+        items.push({
+            id: 'vault-expiring',
+            tone: 'warning',
+            title: `${expiring.length} document${expiring.length > 1 ? 's' : ''} in your vault expire${expiring.length > 1 ? '' : 's'} soon`,
+            detail: expiring.map((d) => d.title).join(' · '),
+            action: 'Renew',
+            href: route('vault.index'),
+            order: 10,
         });
     }
     if (missing.length) {

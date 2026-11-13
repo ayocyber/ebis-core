@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TenderStage;
 use App\Http\Controllers\AcceptInvitationController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\CompanyProfileController;
@@ -8,6 +9,7 @@ use App\Http\Controllers\TenantSwitchController;
 use App\Http\Controllers\TenderController;
 use App\Http\Controllers\VaultDocumentController;
 use App\Models\AuditEvent;
+use App\Models\Tender;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -36,6 +38,12 @@ Route::middleware(['auth', 'tenant'])->group(function () {
 
     Route::get('dashboard', function () {
         return Inertia::render('dashboard', [
+            'tenders' => Tender::with(['creator', 'documents' => fn ($q) => $q->withoutText()])
+                ->where('stage', '!=', TenderStage::Submitted->value)
+                ->orderBy('deadline')
+                ->get()
+                ->map->toFrontend()
+                ->values(),
             'recentActivity' => AuditEvent::latest('id')->limit(5)->get()->map->toFrontend(),
         ]);
     })->name('dashboard');
