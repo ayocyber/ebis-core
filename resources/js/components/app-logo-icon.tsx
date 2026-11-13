@@ -1,33 +1,17 @@
-import { SVGAttributes, useId } from 'react';
+import { SVGAttributes } from 'react';
 
 /**
- * ProcurPilot mark — a gradient tile with a three-line checklist,
- * the first line ticked and ProcurPilot-red bullets. Self-contained colours so it reads on any surface.
+ * ProcurPilot mark: a two-blade propeller (one blue, one red) turning around a
+ * navy hub, on a white tile. Colours are fixed so it reads on any surface; the
+ * same drawing is public/favicon.svg.
  */
 export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
-    const id = useId().replace(/:/g, '');
-
     return (
-        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" {...props}>
-            <defs>
-                <linearGradient id={`${id}-bg`} x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                    <stop offset="0" stopColor="#2F3BFF" />
-                    <stop offset="0.6" stopColor="#1A1FB8" />
-                    <stop offset="1" stopColor="#00036C" />
-                </linearGradient>
-                <linearGradient id={`${id}-shine`} x1="16" y1="0" x2="16" y2="18" gradientUnits="userSpaceOnUse">
-                    <stop offset="0" stopColor="#fff" stopOpacity="0.35" />
-                    <stop offset="1" stopColor="#fff" stopOpacity="0" />
-                </linearGradient>
-            </defs>
-            <rect width="32" height="32" rx="8" fill={`url(#${id}-bg)`} />
-            <rect width="32" height="32" rx="8" fill={`url(#${id}-shine)`} />
-            <path d="M8.2 10.4l1.9 1.9 3.4-3.6" fill="none" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
-            <rect x="16" y="9.2" width="8" height="2.4" rx="1.2" fill="#fff" />
-            <circle cx="10" cy="16.6" r="1.8" fill="#FF3B41" />
-            <rect x="16" y="15.4" width="8" height="2.4" rx="1.2" fill="#fff" fillOpacity="0.85" />
-            <circle cx="10" cy="22.8" r="1.8" fill="#FF3B41" fillOpacity="0.75" />
-            <rect x="16" y="21.6" width="5" height="2.4" rx="1.2" fill="#fff" fillOpacity="0.6" />
+        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ProcurPilot" {...props}>
+            <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="7.5" fill="#fff" stroke="#DADDF0" strokeWidth="1.5" />
+            <path d="M16 16C14.2 11.2 15.6 6.4 19.4 6.2c3.7-.2 4.4 4.6.9 7.4C18.8 14.9 17.4 15.6 16 16z" fill="#2F3BFF" />
+            <path d="M16 16C17.8 20.8 16.4 25.6 12.6 25.8c-3.7.2-4.4-4.6-.9-7.4C13.2 17.1 14.6 16.4 16 16z" fill="#E3262C" />
+            <circle cx="16" cy="16" r="2.3" fill="#0B1B6B" />
         </svg>
     );
 }
