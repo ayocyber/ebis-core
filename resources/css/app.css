@@ -280,3 +280,35 @@
         transform: none;
     }
 }
+
+/*
+ * ProcurPilot logo: the propeller (blades + hub) turns around the tile's centre.
+ * `logo-spin-idle`  turns slowly all the time (homepage, sign-in).
+ * `logo-spin-hover` turns while its link or button is hovered (inside the app).
+ */
+@keyframes propeller-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+.logo-propeller {
+    transform-box: view-box;
+    transform-origin: 16px 16px;
+}
+.logo-spin-idle .logo-propeller {
+    animation: propeller-spin 6s linear infinite;
+}
+.logo-spin-hover .logo-propeller {
+    animation: propeller-spin 1.1s linear infinite paused;
+}
+.logo-spin-hover:hover .logo-propeller,
+:is(a, button):hover .logo-spin-hover .logo-propeller {
+    animation-play-state: running;
+}
+/* The global reduced-motion rule only shortens animations, which would make a
+   looping spin flicker; stop the propeller outright instead. */
+@media (prefers-reduced-motion: reduce) {
+    .logo-propeller {
+        animation-name: none !important;
+    }
+}

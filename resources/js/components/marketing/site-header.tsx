@@ -18,7 +18,7 @@ export const siteLinks = [
 export function SiteLogo({ className }: { className?: string }) {
     return (
         <Link href={route('home')} className={cn('flex items-center gap-2.5', className)}>
-            <AppLogoIcon className="size-8" />
+            <AppLogoIcon spin="idle" className="size-8" />
             <span className="text-[15px] font-semibold tracking-tight">ProcurPilot</span>
         </Link>
     );

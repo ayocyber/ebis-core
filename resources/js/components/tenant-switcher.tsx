@@ -27,7 +27,7 @@ export function TenantSwitcher() {
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent">
                             <span className="flex size-8 shrink-0">
-                                <AppLogoIcon className="size-8" />
+                                <AppLogoIcon spin="hover" className="size-8" />
                             </span>
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-semibold">{tenant?.name ?? 'No company'}</span>
