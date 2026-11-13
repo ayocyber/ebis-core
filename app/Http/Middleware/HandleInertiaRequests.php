@@ -64,6 +64,8 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+                // ING-05: the upload matched an existing tender; the form offers to open it or continue.
+                'duplicate' => fn () => $request->session()->get('duplicate'),
             ],
         ];
     }

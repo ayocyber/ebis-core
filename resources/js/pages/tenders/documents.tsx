@@ -131,8 +131,8 @@ export default function TenderDocuments({ tenderId }: { tenderId: string }) {
                         <p className="text-muted-foreground flex items-start gap-2 text-xs leading-relaxed">
                             <Info className="mt-0.5 size-3.5 shrink-0" />
                             <span>
-                                Read from the tender’s submission instructions (ITT §7). When ProcurPilot builds the submission pack it renames every file to
-                                the buyer’s rule:{' '}
+                                Read from the tender’s submission instructions (ITT §7). When ProcurPilot builds the submission pack it renames every
+                                file to the buyer’s rule:{' '}
                                 <code className="bg-muted text-foreground rounded px-1 py-0.5 font-mono text-[11px]">
                                     {slug(tender.reference)}_{slug(supplier)}_Document
                                 </code>

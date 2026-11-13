@@ -1,7 +1,8 @@
 import { DeadlineChip } from '@/components/ebis/badges';
+import { NewTenderDialog } from '@/components/ebis/new-tender-dialog';
 import { TenderDropzone } from '@/components/ebis/tender-dropzone';
 import { Input } from '@/components/ui/input';
-import { tenders } from '@/data/mock-ebis';
+import { tenders as sampleTenders } from '@/data/mock-ebis';
 import AppLayout from '@/layouts/app-layout';
 import { daysUntil, formatDate, formatMoney, stageIndex, stageRoute, stages } from '@/lib/ebis';
 import { canEdit } from '@/lib/roles';
@@ -14,8 +15,16 @@ import { useMemo, useState } from 'react';
 
 type View = 'list' | 'grid';
 
-export default function TendersIndex() {
+const samples: Tender[] = sampleTenders.map((t) => ({ ...t, isSample: true }));
+
+/** Real tenders open their own page; samples open the stage they are at. */
+function tenderHref(t: Tender): string {
+    return t.isSample ? route(stageRoute(t.stage), t.id) : route('tenders.show', t.id);
+}
+
+export default function TendersIndex({ tenders }: { tenders: Tender[] }) {
     const { role } = usePage<SharedData>().props;
+    const [newFiles, setNewFiles] = useState<File[] | null>(null);
     const [view, setView] = useState<View>(() => {
         try {
             return (localStorage.getItem('tenders:view') as View) || 'list';
@@ -36,10 +45,12 @@ export default function TendersIndex() {
 
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
-        return [...tenders]
-            .filter((t) => !q || `${t.title} ${t.reference} ${t.buyer.name} ${t.sector}`.toLowerCase().includes(q))
-            .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
-    }, [query]);
+        const byDeadline = (a: Tender, b: Tender) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+        // The company's own tenders first, then the samples that preview later stages.
+        return [...[...tenders].sort(byDeadline), ...[...samples].sort(byDeadline)].filter(
+            (t) => !q || `${t.title} ${t.reference} ${t.buyer.name} ${t.sector}`.toLowerCase().includes(q),
+        );
+    }, [query, tenders]);
 
     return (
         <AppLayout breadcrumbs={[{ title: 'Tenders', href: '/tenders' }]}>
@@ -55,24 +66,26 @@ export default function TendersIndex() {
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
-                    <TenderDropzone disabled={!canEdit(role)} />
+                    <TenderDropzone disabled={!canEdit(role)} onFiles={setNewFiles} />
                     <div className="bg-card flex flex-col justify-between gap-4 rounded-xl border p-4 shadow-xs">
                         <div>
                             <p className="flex items-center gap-2 text-sm font-medium">
                                 <Radio className="text-brand-accent size-4" /> Public feeds
                             </p>
-                            <p className="text-muted-foreground mt-1 text-xs">New tenders matching your profile are pulled in daily.</p>
+                            <p className="text-muted-foreground mt-1 text-xs">Coming soon: new tenders matching your profile, pulled in daily.</p>
                         </div>
                         <ul className="space-y-2 text-sm">
-                            {['Find a Tender', 'Contracts Finder', 'Public Contracts Scotland'].map((feed, i) => (
+                            {['Find a Tender', 'Contracts Finder', 'Public Contracts Scotland'].map((feed) => (
                                 <li key={feed} className="flex items-center justify-between">
                                     <span>{feed}</span>
-                                    <span className="text-muted-foreground text-xs tabular-nums">{[12, 7, 3][i]} new</span>
+                                    <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-medium">Soon</span>
                                 </li>
                             ))}
                         </ul>
                     </div>
                 </div>
+
+                <NewTenderDialog files={newFiles} onOpenChange={(open) => !open && setNewFiles(null)} />
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <h2 className="text-base font-semibold">
@@ -164,13 +177,14 @@ function Score({ value }: { value?: number }) {
 function TenderListItem({ tender: t, index }: { tender: Tender; index: number }) {
     return (
         <Link
-            href={route(stageRoute(t.stage), t.id)}
+            href={tenderHref(t)}
             style={{ animationDelay: `${index * 40}ms` }}
             className="group hover:bg-accent/40 animate-fade-up grid gap-3 px-4 py-4 transition-colors sm:px-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
         >
             <div className="min-w-0">
                 <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                    <span className="font-mono">{t.reference}</span>
+                    {t.reference && <span className="font-mono">{t.reference}</span>}
+                    {t.isSample && <SampleBadge />}
                     <span className="flex items-center gap-1">
                         <Building2 className="size-3.5" /> {t.buyer.name}
                     </span>
@@ -197,12 +211,15 @@ function TenderListItem({ tender: t, index }: { tender: Tender; index: number })
 function TenderCard({ tender: t, index }: { tender: Tender; index: number }) {
     return (
         <Link
-            href={route(stageRoute(t.stage), t.id)}
+            href={tenderHref(t)}
             style={{ animationDelay: `${index * 40}ms` }}
             className="group bg-card hover:border-primary/30 animate-fade-up flex flex-col gap-3 rounded-xl border p-4 shadow-xs transition-all hover:-translate-y-0.5 hover:shadow-md"
         >
             <div className="flex items-start justify-between gap-2">
-                <span className="text-muted-foreground font-mono text-xs">{t.reference}</span>
+                <span className="text-muted-foreground flex items-center gap-2 font-mono text-xs">
+                    {t.reference || 'No reference'}
+                    {t.isSample && <SampleBadge />}
+                </span>
                 <ArrowUpRight className="text-muted-foreground group-hover:text-primary size-4 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </div>
             <p className="line-clamp-2 leading-snug font-medium">{t.title}</p>
@@ -218,5 +235,17 @@ function TenderCard({ tender: t, index }: { tender: Tender; index: number }) {
                 <Score value={t.eligibilityScore} />
             </div>
         </Link>
+    );
+}
+
+/** Built-in tenders that preview the later stages until they run on real data. */
+function SampleBadge() {
+    return (
+        <span
+            title="A built-in example that previews the later stages"
+            className="bg-brand-accent/10 text-brand-accent rounded-full px-2 py-0.5 font-sans text-[10px] font-semibold tracking-wide uppercase"
+        >
+            Sample
+        </span>
     );
 }

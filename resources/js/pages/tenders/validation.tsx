@@ -141,8 +141,8 @@ export default function TenderValidation({ tenderId }: { tenderId: string }) {
                                                   : 'Ready to sign off'}
                                         </h2>
                                         <p className="text-muted-foreground text-sm">
-                                            ProcurPilot checked the decision, every gap, the compliance matrix, the documents, the tender’s submission rules
-                                            and whether your sections agree with each other.
+                                            ProcurPilot checked the decision, every gap, the compliance matrix, the documents, the tender’s submission
+                                            rules and whether your sections agree with each other.
                                         </p>
                                     </div>
                                 </div>

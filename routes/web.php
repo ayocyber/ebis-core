@@ -5,9 +5,11 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\CompanyProfileController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\TenantSwitchController;
+use App\Http\Controllers\TenderController;
 use App\Http\Controllers\VaultDocumentController;
 use App\Models\AuditEvent;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -51,42 +53,33 @@ Route::middleware(['auth', 'tenant'])->group(function () {
 
     Route::get('activity', [ActivityController::class, 'index'])->name('activity.index');
 
-    // Tenders — frontend preview on mock data until the tender API lands.
-    Route::get('tenders', function () {
-        return Inertia::render('tenders/index');
-    })->name('tenders.index');
+    // M2: tender intake. Real tenders have UUIDs; the sample tenders (tnd-001…) keep
+    // the stage pages below, which still run on sample data.
+    Route::get('tenders', [TenderController::class, 'index'])->name('tenders.index');
+    Route::post('tenders', [TenderController::class, 'store'])->name('tenders.store');
+    Route::get('tenders/{tender}', [TenderController::class, 'show'])->whereUuid('tender')->name('tenders.show');
+    Route::patch('tenders/{tender}', [TenderController::class, 'update'])->whereUuid('tender')->name('tenders.update');
+    Route::delete('tenders/{tender}', [TenderController::class, 'destroy'])->whereUuid('tender')->name('tenders.destroy');
+    Route::post('tenders/{tender}/documents', [TenderController::class, 'addDocuments'])
+        ->whereUuid('tender')->name('tenders.documents.store');
+    Route::get('tenders/{tender}/documents/{document}/download', [TenderController::class, 'download'])
+        ->whereUuid(['tender', 'document'])->name('tenders.documents.download');
+    Route::delete('tenders/{tender}/documents/{document}', [TenderController::class, 'destroyDocument'])
+        ->whereUuid(['tender', 'document'])->name('tenders.documents.destroy');
+    Route::post('tenders/{tender}/documents/{document}/retry', [TenderController::class, 'retryExtraction'])
+        ->whereUuid(['tender', 'document'])->name('tenders.documents.retry');
 
-    Route::get('tenders/{tender}/eligibility', function (string $tender) {
-        return Inertia::render('tenders/eligibility', ['tenderId' => $tender]);
-    })->where('tender', '[A-Za-z0-9-]+')->name('tenders.eligibility');
+    // Later stages: a preview on the sample tenders until M3–M7 land. Real tenders
+    // (UUIDs) don't have these stages yet, so they go to their own page instead.
+    foreach (['eligibility', 'gaps', 'decision', 'compliance', 'bid', 'requirements', 'documents', 'validation'] as $stage) {
+        Route::get("tenders/{tender}/{$stage}", function (string $tender) use ($stage) {
+            if (Str::isUuid($tender)) {
+                return to_route('tenders.show', $tender);
+            }
 
-    Route::get('tenders/{tender}/gaps', function (string $tender) {
-        return Inertia::render('tenders/gaps', ['tenderId' => $tender]);
-    })->where('tender', '[A-Za-z0-9-]+')->name('tenders.gaps');
-
-    Route::get('tenders/{tender}/decision', function (string $tender) {
-        return Inertia::render('tenders/decision', ['tenderId' => $tender]);
-    })->where('tender', '[A-Za-z0-9-]+')->name('tenders.decision');
-
-    Route::get('tenders/{tender}/compliance', function (string $tender) {
-        return Inertia::render('tenders/compliance', ['tenderId' => $tender]);
-    })->where('tender', '[A-Za-z0-9-]+')->name('tenders.compliance');
-
-    Route::get('tenders/{tender}/bid', function (string $tender) {
-        return Inertia::render('tenders/bid', ['tenderId' => $tender]);
-    })->where('tender', '[A-Za-z0-9-]+')->name('tenders.bid');
-
-    Route::get('tenders/{tender}/requirements', function (string $tender) {
-        return Inertia::render('tenders/requirements', ['tenderId' => $tender]);
-    })->where('tender', '[A-Za-z0-9-]+')->name('tenders.requirements');
-
-    Route::get('tenders/{tender}/documents', function (string $tender) {
-        return Inertia::render('tenders/documents', ['tenderId' => $tender]);
-    })->where('tender', '[A-Za-z0-9-]+')->name('tenders.documents');
-
-    Route::get('tenders/{tender}/validation', function (string $tender) {
-        return Inertia::render('tenders/validation', ['tenderId' => $tender]);
-    })->where('tender', '[A-Za-z0-9-]+')->name('tenders.validation');
+            return Inertia::render("tenders/{$stage}", ['tenderId' => $tender]);
+        })->where('tender', '[A-Za-z0-9-]+')->name("tenders.{$stage}");
+    }
 });
 
 require __DIR__.'/settings.php';

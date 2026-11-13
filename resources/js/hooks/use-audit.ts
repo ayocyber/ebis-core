@@ -6,7 +6,18 @@ import { useMemo, useSyncExternalStore } from 'react';
  * profile so far); pages pass the server entries to useAudit(), which merges in any
  * entries from the sample tender pages.
  */
-export type AuditCategory = 'requirements' | 'assessment' | 'override' | 'gap' | 'decision' | 'bid' | 'documents' | 'signoff' | 'vault' | 'profile';
+export type AuditCategory =
+    | 'requirements'
+    | 'assessment'
+    | 'override'
+    | 'gap'
+    | 'decision'
+    | 'bid'
+    | 'documents'
+    | 'signoff'
+    | 'vault'
+    | 'profile'
+    | 'tender';
 
 export interface AuditEvent {
     readonly id: string;
@@ -33,6 +44,7 @@ export const auditCategoryMeta: Record<AuditCategory, { label: string; dot: stri
     signoff: { label: 'Sign-off', dot: 'bg-status-met' },
     vault: { label: 'Evidence vault', dot: 'bg-emerald-600' },
     profile: { label: 'Company profile', dot: 'bg-slate-500' },
+    tender: { label: 'Tenders', dot: 'bg-cyan-600' },
 };
 
 /**

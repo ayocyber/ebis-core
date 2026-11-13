@@ -15,4 +15,5 @@ enum AuditCategory: string
     case Signoff = 'signoff';
     case Vault = 'vault';
     case Profile = 'profile';
+    case Tender = 'tender';
 }

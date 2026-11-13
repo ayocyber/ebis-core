@@ -128,8 +128,8 @@ export default function TenderRequirements({ tenderId }: { tenderId: string }) {
                     <div className="space-y-1">
                         <h2 className="text-xl font-semibold tracking-tight">Check what ProcurPilot found</h2>
                         <p className="text-muted-foreground max-w-2xl text-sm text-pretty">
-                            ProcurPilot read the tender pack and pulled out every requirement with the clause it came from. Fix anything it got wrong before
-                            the eligibility check runs. Items it wasn’t sure about are flagged.
+                            ProcurPilot read the tender pack and pulled out every requirement with the clause it came from. Fix anything it got wrong
+                            before the eligibility check runs. Items it wasn’t sure about are flagged.
                         </p>
                     </div>
                     <dl className="flex flex-wrap gap-2 text-xs">

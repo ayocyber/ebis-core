@@ -32,7 +32,12 @@ export interface SharedData {
     role: TenantRole | null;
     /** Every company the user belongs to, for the switcher. */
     tenants: TenantSummary[];
-    flash: { success?: string | null; error?: string | null };
+    flash: {
+        success?: string | null;
+        error?: string | null;
+        /** ING-05: the last upload matched a tender the company already has */
+        duplicate?: { message: string; tender: { id: string; title: string; reference: string | null } } | null;
+    };
     /** The current company's evidence vault (null before onboarding). */
     vault: { documents: VaultDocument[] } | null;
     [key: string]: unknown;

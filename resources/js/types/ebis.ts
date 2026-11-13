@@ -35,6 +35,9 @@ export type TenderStage =
 
 export type TenderDocumentKind = 'pdf' | 'docx' | 'zip' | 'xlsx';
 
+/** How reading a document's text went (ING-02). */
+export type ExtractionStatus = 'pending' | 'done' | 'partial' | 'failed';
+
 export interface TenderDocument {
     id: string;
     name: string;
@@ -44,6 +47,15 @@ export interface TenderDocument {
     /** e.g. "Invitation to tender", "Specification", "Pricing schedule" */
     role: string;
     uploadedAt: ISODate;
+    /** Name of the uploaded ZIP this file came out of */
+    fromArchive?: string;
+    /** Real uploads only (the sample tenders have none) */
+    extraction?: {
+        status: ExtractionStatus;
+        /** 1-based pages with no readable text, usually scans */
+        unreadablePages?: number[];
+        error?: string;
+    };
 }
 
 export interface Buyer {
@@ -71,6 +83,10 @@ export interface Tender {
     eligibilityScore?: number;
     owner: { name: string; initials: string };
     createdAt: ISODate;
+    /** Bumped each time the pack changes (real uploads only) */
+    version?: number;
+    /** One of the built-in sample tenders that preview the later stages */
+    isSample?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
