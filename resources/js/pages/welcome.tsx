@@ -20,9 +20,7 @@ import {
     FileUp,
     Gauge,
     ListChecks,
-    Mail,
     PenLine,
-    Phone,
     Plus,
     Quote,
     ShieldCheck,
@@ -501,13 +499,6 @@ function Faq() {
             <div className="reveal space-y-4">
                 <Eyebrow>FAQ</Eyebrow>
                 <h2 className="text-gradient text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">Questions, answered.</h2>
-                <p className="text-muted-foreground">
-                    Can’t find what you need?{' '}
-                    <a href="mailto:info@ebistechgroup.com" className="text-foreground underline-offset-4 hover:underline">
-                        Talk to the team
-                    </a>
-                    .
-                </p>
             </div>
             <div className="divide-y border-y">
                 {faqs.map((f, i) => (
@@ -563,13 +554,6 @@ function FinalCta() {
                                 {auth.user ? 'Open ProcurPilot' : 'Create your account'} <ArrowRight />
                             </Link>
                         </Button>
-                        <Button
-                            asChild
-                            size="lg"
-                            className="h-12 w-full rounded-full bg-[#E3262C] px-7 text-[15px] text-white shadow-[0_12px_32px_-10px_rgba(227,38,44,0.8)] hover:bg-[#cc1f25] sm:w-auto"
-                        >
-                            <a href="mailto:info@ebistechgroup.com">Book a walkthrough</a>
-                        </Button>
                     </div>
                 </div>
             </div>
@@ -584,7 +568,7 @@ function FinalCta() {
 function SiteFooter() {
     return (
         <footer className="border-t">
-            <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.5fr_1fr_1fr] 2xl:max-w-7xl">
+            <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.5fr_1fr] 2xl:max-w-7xl">
                 <div className="space-y-4">
                     <SiteLogo />
                     <p className="text-muted-foreground max-w-xs text-sm">
@@ -603,27 +587,9 @@ function SiteFooter() {
                         ))}
                     </ul>
                 </div>
-                <div className="space-y-3 text-sm">
-                    <p className="font-medium">Contact</p>
-                    <ul className="text-muted-foreground space-y-2.5">
-                        <li>
-                            <a
-                                href="mailto:info@ebistechgroup.com"
-                                className="hover:text-foreground inline-flex items-center gap-2 transition-colors"
-                            >
-                                <Mail className="size-4" /> info@ebistechgroup.com
-                            </a>
-                        </li>
-                        <li>
-                            <a href="tel:+2349024976746" className="hover:text-foreground inline-flex items-center gap-2 transition-colors">
-                                <Phone className="size-4" /> +234 902 497 6746
-                            </a>
-                        </li>
-                    </ul>
-                </div>
             </div>
             <div className="text-muted-foreground mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 border-t px-4 py-6 text-xs sm:flex-row sm:px-6 2xl:max-w-7xl">
-                <span>© {new Date().getFullYear()} ProcurPilot Tech Group. All rights reserved.</span>
+                <span>© {new Date().getFullYear()} ProcurPilot. All rights reserved.</span>
                 <span>Built for UK SMEs 🇬🇧</span>
             </div>
         </footer>

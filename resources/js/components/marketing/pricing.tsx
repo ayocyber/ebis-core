@@ -113,9 +113,6 @@ export function Pricing() {
                         <p className="text-muted-foreground text-sm">Joint-venture workspaces, SSO, custom onboarding and on-site training.</p>
                     </div>
                 </div>
-                <Button asChild variant="outline" className="rounded-full">
-                    <a href="mailto:info@ebistechgroup.com">Talk to sales</a>
-                </Button>
             </div>
 
             <p className="text-muted-foreground mt-6 text-center text-xs">
