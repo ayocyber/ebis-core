@@ -24,7 +24,7 @@ Route::middleware(['auth', 'tenant'])->group(function () {
 
     // Company (the current tenant)
     Route::get('settings/company', [CompanyController::class, 'edit'])->name('company.edit');
-    Route::patch('settings/company', [CompanyController::class, 'update'])->name('company.update');
+    Route::patch('settings/company', [CompanyController::class, 'update'])->name('settings.company.update');
 
     Route::get('settings/members', [MembersController::class, 'index'])->name('members.index');
     Route::patch('settings/members/{user}', [MembersController::class, 'update'])->name('members.update');

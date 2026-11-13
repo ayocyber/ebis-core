@@ -27,7 +27,7 @@ export default function CompanySettings({ company, canManage }: Props) {
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-        patch(route('company.update'), { preserveScroll: true });
+        patch(route('settings.company.update'), { preserveScroll: true });
     };
 
     return (
