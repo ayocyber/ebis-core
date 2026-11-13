@@ -27,7 +27,7 @@ import {
 import { canEdit } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
-import type { BidSection } from '@/types/ebis';
+import type { BidSection, EligibilityRow, Tender } from '@/types/ebis';
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
     AlertTriangle,
@@ -49,11 +49,41 @@ import { useMemo, useState } from 'react';
 
 type View = 'requirements' | 'sections';
 
+/** Sample tenders: mapping changes stay on this page. */
 export default function TenderCompliance({ tenderId }: { tenderId: string }) {
-    const { role } = usePage<SharedData>().props;
     const tender = findTender(tenderId);
     const { rows, sections } = useTenderWorkspace(tenderId);
     const [mapping, setMapping] = useState<Record<string, string | undefined>>({});
+
+    if (!tender) return <TenderNotFound />;
+
+    return (
+        <ComplianceScreen
+            tender={tender}
+            rows={rows}
+            sections={sections}
+            mapping={mapping}
+            onMap={(reqId, sectionId) => setMapping((m) => ({ ...m, [reqId]: sectionId }))}
+        />
+    );
+}
+
+/** Stage 7 (BID-01): every requirement, the section that answers it, and its evidence. */
+export function ComplianceScreen({
+    tender,
+    rows,
+    sections,
+    mapping,
+    onMap,
+}: {
+    tender: Tender;
+    rows: EligibilityRow[];
+    sections: BidSection[];
+    /** Requirement id → section id, on top of each section's own list */
+    mapping: Record<string, string | undefined>;
+    onMap: (requirementId: string, sectionId: string | undefined) => void;
+}) {
+    const { role } = usePage<SharedData>().props;
     const [view, setView] = useState<View>('requirements');
     const [statusFilter, setStatusFilter] = useState<ComplianceStatus | null>(null);
     const [query, setQuery] = useState('');
@@ -65,8 +95,6 @@ export default function TenderCompliance({ tenderId }: { tenderId: string }) {
         matrix.forEach((r) => c[r.compliance]++);
         return c;
     }, [matrix]);
-
-    if (!tender) return <TenderNotFound />;
 
     const mapped = matrix.filter((r) => r.section).length;
     const coverage = Math.round((mapped / matrix.length) * 100);
@@ -84,7 +112,7 @@ export default function TenderCompliance({ tenderId }: { tenderId: string }) {
         const url = URL.createObjectURL(blob);
         const a = Object.assign(document.createElement('a'), {
             href: url,
-            download: `${tender.reference.replace(/\//g, '-')} compliance matrix.csv`,
+            download: `${(tender.reference || tender.title).replace(/\//g, '-')} compliance matrix.csv`,
         });
         a.click();
         URL.revokeObjectURL(url);
@@ -94,11 +122,11 @@ export default function TenderCompliance({ tenderId }: { tenderId: string }) {
         <AppLayout
             breadcrumbs={[
                 { title: 'Tenders', href: '/tenders' },
-                { title: tender.reference, href: `/tenders/${tender.id}/eligibility` },
+                { title: tender.reference || tender.title, href: `/tenders/${tender.id}/eligibility` },
                 { title: 'Compliance matrix', href: `/tenders/${tender.id}/compliance` },
             ]}
         >
-            <Head title={`Compliance · ${tender.reference}`} />
+            <Head title={`Compliance · ${tender.reference || tender.title}`} />
 
             <div className="flex w-full flex-1 flex-col gap-6 p-4 sm:p-6 lg:px-8">
                 <TenderHeader
@@ -248,12 +276,7 @@ export default function TenderCompliance({ tenderId }: { tenderId: string }) {
 
                 {view === 'requirements' ? (
                     visible.length ? (
-                        <RequirementTable
-                            rows={visible}
-                            sections={sections}
-                            canEdit={canEdit(role)}
-                            onMap={(reqId, sectionId) => setMapping((m) => ({ ...m, [reqId]: sectionId }))}
-                        />
+                        <RequirementTable rows={visible} sections={sections} canEdit={canEdit(role)} onMap={onMap} />
                     ) : (
                         <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed p-10 text-center">
                             <SearchX className="text-muted-foreground size-8" />

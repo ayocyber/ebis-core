@@ -10,6 +10,7 @@ use App\Models\Gap;
 use App\Models\Tender;
 use App\Models\TenderDecision;
 use App\Support\AuditLog;
+use App\Support\Bid\BidWorkspace;
 use App\Support\Eligibility\EligibilityRunner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -142,6 +143,11 @@ class GapDecisionController extends Controller
                 $tender->id,
             );
         });
+
+        if ($data['outcome'] === 'proceed') {
+            // DEC-04: the bid workspace, with the requirements carried over.
+            app(BidWorkspace::class)->ensure($tender);
+        }
 
         return back()->with('success', $data['outcome'] === 'proceed' ? 'Decision recorded: bid.' : 'Decision recorded: don’t bid.');
     }

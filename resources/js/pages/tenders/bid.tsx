@@ -2,6 +2,7 @@ import { StatusBadge } from '@/components/ebis/badges';
 import { TenderHeader } from '@/components/ebis/tender-header';
 import { TenderNotFound } from '@/components/ebis/tender-not-found';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { draftFor } from '@/data/mock-bid';
 import { findTender } from '@/data/mock-ebis';
@@ -12,7 +13,7 @@ import { factSourceLabels } from '@/lib/ebis';
 import { canEdit } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
-import type { BidSection, ProfileFact } from '@/types/ebis';
+import type { BidSection, EligibilityRow, ProfileFact, Tender } from '@/types/ebis';
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
     AlertTriangle,
@@ -40,11 +41,43 @@ type Panel = 'requirements' | 'evidence' | 'checks' | 'history';
 const countWords = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0);
 const countCitations = (t: string) => (t.match(/\[[^\]]+\]/g) ?? []).length;
 
+/** What the bid screen reads and changes. Sample tenders use the in-memory workspace; real ones the server. */
+export interface BidWorkspaceApi {
+    rows: EligibilityRow[];
+    sections: BidSection[];
+    versions: Record<string, SectionVersion[]>;
+    updateSection: (sectionId: string, patch: Partial<Pick<BidSection, 'body' | 'status' | 'assignee'>>) => void;
+    saveVersion: (sectionId: string, label: string, by?: string) => void;
+    restoreVersion: (sectionId: string, versionId: string, by?: string) => void;
+}
+
+/** Sample tenders: everything stays in memory, and "Draft with ProcurPilot" plays a canned draft. */
 export default function TenderBid({ tenderId }: { tenderId: string }) {
-    const { role, auth } = usePage<SharedData>().props;
     const tender = findTender(tenderId);
-    const { rows, sections, versions, updateSection, saveVersion, restoreVersion } = useTenderWorkspace(tenderId);
+    const workspace = useTenderWorkspace(tenderId);
+
+    if (!tender) return <TenderNotFound />;
+
+    return <BidScreen tender={tender} workspace={workspace} draftFor={draftFor} />;
+}
+
+/** Stage 8 (BID-03/05): write each section with citations, checks and version history. */
+export function BidScreen({
+    tender,
+    workspace,
+    draftFor,
+    onAddSection,
+}: {
+    tender: Tender;
+    workspace: BidWorkspaceApi;
+    /** AI drafting; without it the screen says drafting is not available yet */
+    draftFor?: (section: BidSection) => string;
+    onAddSection?: (title: string) => void;
+}) {
+    const { role, auth } = usePage<SharedData>().props;
+    const { rows, sections, versions, updateSection, saveVersion, restoreVersion } = workspace;
     const editable = canEdit(role);
+    const [newSection, setNewSection] = useState('');
 
     const [selectedId, setSelectedId] = useState(() => sections.find((s) => s.warnings.length)?.id ?? sections[0]?.id);
     const [panel, setPanel] = useState<Panel>('checks');
@@ -71,7 +104,42 @@ export default function TenderBid({ tenderId }: { tenderId: string }) {
         el.style.height = `${Math.max(el.scrollHeight, 360)}px`;
     }, [section?.body, selectedId]);
 
-    if (!tender || !section) return <TenderNotFound />;
+    if (!section) {
+        return (
+            <AppLayout breadcrumbs={[{ title: 'Tenders', href: '/tenders' }]}>
+                <Head title={`Bid · ${tender.reference || tender.title}`} />
+                <div className="flex w-full flex-1 flex-col gap-6 p-4 sm:p-6 lg:px-8">
+                    <TenderHeader tender={tender} viewing="drafting" />
+                    <div className="bg-card flex flex-col items-center gap-3 rounded-2xl border p-10 text-center">
+                        <FileText className="text-muted-foreground size-8" />
+                        <p className="font-medium">No sections yet</p>
+                        <p className="text-muted-foreground max-w-md text-sm">
+                            Sections are made from the mandatory and scored requirements. Add one to start writing.
+                        </p>
+                        {onAddSection && editable && (
+                            <form
+                                className="flex w-full max-w-sm gap-2"
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    if (newSection.trim()) onAddSection(newSection.trim());
+                                }}
+                            >
+                                <Input
+                                    value={newSection}
+                                    onChange={(e) => setNewSection(e.target.value)}
+                                    placeholder="Section title"
+                                    aria-label="Section title"
+                                />
+                                <Button type="submit" disabled={!newSection.trim()}>
+                                    <Plus className="size-4" /> Add
+                                </Button>
+                            </form>
+                        )}
+                    </div>
+                </div>
+            </AppLayout>
+        );
+    }
 
     function stopDrafting() {
         if (timer.current) window.clearInterval(timer.current);
@@ -80,6 +148,7 @@ export default function TenderBid({ tenderId }: { tenderId: string }) {
     }
 
     const draftWithEbis = () => {
+        if (!draftFor) return;
         const words = draftFor(section).split(' ');
         const start = section.body.trim() ? `${section.body.trim()}\n\n` : '';
         let i = 0;
@@ -125,11 +194,11 @@ export default function TenderBid({ tenderId }: { tenderId: string }) {
         <AppLayout
             breadcrumbs={[
                 { title: 'Tenders', href: '/tenders' },
-                { title: tender.reference, href: `/tenders/${tender.id}/eligibility` },
+                { title: tender.reference || tender.title, href: `/tenders/${tender.id}/eligibility` },
                 { title: 'Bid', href: `/tenders/${tender.id}/bid` },
             ]}
         >
-            <Head title={`Bid · ${tender.reference}`} />
+            <Head title={`Bid · ${tender.reference || tender.title}`} />
 
             <div className="flex w-full flex-1 flex-col gap-6 p-4 sm:p-6 lg:px-8">
                 <TenderHeader
@@ -192,6 +261,35 @@ export default function TenderBid({ tenderId }: { tenderId: string }) {
                                 <SectionItem key={s.id} index={i + 1} section={s} active={s.id === section.id} onClick={() => setSelectedId(s.id)} />
                             ))}
                         </ol>
+                        {onAddSection && editable && (
+                            <form
+                                className="flex gap-1.5 border-t p-2"
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    if (!newSection.trim()) return;
+                                    onAddSection(newSection.trim());
+                                    setNewSection('');
+                                }}
+                            >
+                                <Input
+                                    value={newSection}
+                                    onChange={(e) => setNewSection(e.target.value)}
+                                    placeholder="New section"
+                                    aria-label="New section title"
+                                    className="h-8 text-xs"
+                                />
+                                <Button
+                                    type="submit"
+                                    size="icon"
+                                    variant="ghost"
+                                    className="size-8 shrink-0"
+                                    disabled={!newSection.trim()}
+                                    aria-label="Add section"
+                                >
+                                    <Plus className="size-4" />
+                                </Button>
+                            </form>
+                        )}
                     </nav>
 
                     {/* Editor */}
@@ -232,9 +330,18 @@ export default function TenderBid({ tenderId }: { tenderId: string }) {
                                     <Button size="sm" variant="ghost" onClick={stopDrafting}>
                                         <Loader2 className="size-4 animate-spin" /> Writing… stop
                                     </Button>
-                                ) : (
+                                ) : draftFor ? (
                                     <Button size="sm" variant="ghost" onClick={draftWithEbis} disabled={!editable} className="text-primary">
                                         <Sparkles className="size-4" /> {section.body.trim() ? 'Continue with ProcurPilot' : 'Draft with ProcurPilot'}
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        disabled
+                                        title="Drafting with AI arrives once it is switched on for your company."
+                                    >
+                                        <Sparkles className="size-4" /> AI drafting: coming soon
                                     </Button>
                                 )}
                                 <Button size="sm" variant="ghost" onClick={() => setPanel('evidence')} className="hidden sm:inline-flex">
@@ -286,10 +393,14 @@ export default function TenderBid({ tenderId }: { tenderId: string }) {
                                         ...(section.status === 'not_started' && e.target.value.trim() ? { status: 'drafting' as const } : {}),
                                     });
                                 }}
-                                placeholder="Start writing, or let ProcurPilot draft this section from the tender clauses and your evidence."
+                                placeholder={
+                                    draftFor
+                                        ? 'Start writing, or let ProcurPilot draft this section from the tender clauses and your evidence.'
+                                        : 'Start writing. Use Cite evidence to reference facts from your vault and profile.'
+                                }
                                 className="placeholder:text-muted-foreground/70 block min-h-[360px] w-full resize-none bg-transparent px-5 py-5 text-[15px] leading-7 outline-none sm:px-8 sm:py-7"
                             />
-                            {!section.body.trim() && !drafting && editable && (
+                            {!section.body.trim() && !drafting && editable && draftFor && (
                                 <div className="pointer-events-none absolute inset-x-0 bottom-10 flex justify-center">
                                     <Button
                                         size="sm"

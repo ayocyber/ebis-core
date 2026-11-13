@@ -3,6 +3,7 @@
 use App\Enums\TenderStage;
 use App\Http\Controllers\AcceptInvitationController;
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\BidController;
 use App\Http\Controllers\CompanyProfileController;
 use App\Http\Controllers\EligibilityController;
 use App\Http\Controllers\GapDecisionController;
@@ -114,6 +115,20 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     Route::post('tenders/{tender}/decision', [GapDecisionController::class, 'decide'])
         ->whereUuid('tender')->name('tenders.decision.store');
 
+    // The written bid of a real tender (M6): sections, mapping, versions.
+    Route::post('tenders/{tender}/sections', [BidController::class, 'storeSection'])
+        ->whereUuid('tender')->name('tenders.sections.store');
+    Route::patch('tenders/{tender}/sections/{section}', [BidController::class, 'updateSection'])
+        ->whereUuid(['tender', 'section'])->name('tenders.sections.update');
+    Route::delete('tenders/{tender}/sections/{section}', [BidController::class, 'destroySection'])
+        ->whereUuid(['tender', 'section'])->name('tenders.sections.destroy');
+    Route::post('tenders/{tender}/sections/{section}/versions', [BidController::class, 'saveVersion'])
+        ->whereUuid(['tender', 'section'])->name('tenders.sections.versions.store');
+    Route::post('tenders/{tender}/sections/{section}/versions/{version}/restore', [BidController::class, 'restore'])
+        ->whereUuid(['tender', 'section', 'version'])->name('tenders.sections.versions.restore');
+    Route::post('tenders/{tender}/compliance/map', [BidController::class, 'map'])
+        ->whereUuid('tender')->name('tenders.compliance.map');
+
     // Stage pages. Sample tenders (tnd-001…) show the preview built on sample data.
     // Real tenders (UUIDs) use the real page where one exists, otherwise their tender page.
     $real = [
@@ -121,6 +136,8 @@ Route::middleware(['auth', 'tenant'])->group(function () {
         'eligibility' => [EligibilityController::class, 'index'],
         'gaps' => [GapDecisionController::class, 'gaps'],
         'decision' => [GapDecisionController::class, 'decision'],
+        'compliance' => [BidController::class, 'compliance'],
+        'bid' => [BidController::class, 'bid'],
     ];
     foreach (['eligibility', 'gaps', 'decision', 'compliance', 'bid', 'requirements', 'documents', 'validation'] as $stage) {
         Route::get("tenders/{tender}/{$stage}", function (string $tender) use ($stage, $real) {
