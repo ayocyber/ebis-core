@@ -29,8 +29,8 @@ export function Comparison() {
             />
 
             <div className="mt-14 grid gap-4 md:grid-cols-2">
-                <Column tone="before" title="Without EBIS Core" items={before} />
-                <Column tone="after" title="With EBIS Core" items={after} />
+                <Column tone="before" title="Without REA-NEP eProcurement" items={before} />
+                <Column tone="after" title="With REA-NEP eProcurement" items={after} />
             </div>
         </section>
     );

@@ -92,8 +92,11 @@ function Body({ doc, canEdit, onReplace, onDeleted }: { doc: VaultDocument; canE
                             {formatBytes(doc.sizeBytes)} · uploaded {formatDate(doc.uploadedAt)} by {doc.uploadedBy}
                         </p>
                     </div>
-                    <Button size="icon" variant="ghost" disabled title="Downloads arrive with the backend" aria-label="Download">
-                        <Download className="size-4" />
+                    <Button size="icon" variant="ghost" asChild title="Download" aria-label={`Download ${doc.fileName}`}>
+                        {/* A plain link: the browser handles the file download, not Inertia. */}
+                        <a href={route('vault.download', doc.id)} download>
+                            <Download className="size-4" />
+                        </a>
                     </Button>
                 </div>
 
@@ -167,8 +170,7 @@ function Body({ doc, canEdit, onReplace, onDeleted }: { doc: VaultDocument; canE
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => {
-                                    deleteDocument(doc.id);
-                                    onDeleted();
+                                    deleteDocument(doc.id, onDeleted);
                                 }}
                             >
                                 Delete

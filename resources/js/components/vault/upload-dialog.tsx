@@ -5,13 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { setGapStatusFor } from '@/hooks/use-tender-workspace';
-import { saveDocument } from '@/hooks/use-vault';
+import { firstError, saveDocument } from '@/hooks/use-vault';
 import { formatBytes } from '@/lib/ebis';
 import { cn } from '@/lib/utils';
 import { type DocUsage, vaultCategoryMeta, vaultCategoryOrder } from '@/lib/vault';
-import { type SharedData } from '@/types';
-import type { MissingEvidence, Tender, TenderDocumentKind, VaultCategory, VaultDocument } from '@/types/ebis';
-import { Link, usePage } from '@inertiajs/react';
+import type { MissingEvidence, Tender, VaultCategory, VaultDocument } from '@/types/ebis';
+import { Link } from '@inertiajs/react';
 import { CheckCircle2, FileUp, Loader2, PartyPopper, ScanText, UploadCloud } from 'lucide-react';
 import { useRef, useState } from 'react';
 
@@ -55,7 +54,6 @@ export function UploadDialog({ open, onOpenChange, target }: { open: boolean; on
 }
 
 function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => void }) {
-    const { auth } = usePage<SharedData>().props;
     const inputRef = useRef<HTMLInputElement>(null);
     const [step, setStep] = useState<Step>('pick');
     const [file, setFile] = useState<File | null>(null);
@@ -86,29 +84,36 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
         window.setTimeout(() => setStep('details'), 1400);
     };
 
-    const save = () => {
+    const [saving, setSaving] = useState(false);
+
+    const save = async () => {
         if (!file) return;
-        const ext = file.name.split('.').pop()!.toLowerCase();
-        const doc: VaultDocument = {
-            id: `vd-${Date.now()}`,
-            title: form.title.trim(),
-            category: form.category,
-            fileName: file.name,
-            kind: (ext === 'docx' ? 'docx' : 'pdf') as TenderDocumentKind,
-            sizeBytes: file.size,
-            issuer: form.issuer.trim() || undefined,
-            reference: form.reference.trim() || undefined,
-            issuedAt: form.issuedAt ? new Date(form.issuedAt).toISOString() : undefined,
-            expiresAt: form.expiresAt ? new Date(form.expiresAt).toISOString() : undefined,
-            summary: base?.summary ?? target.missing?.why ?? 'Uploaded to the vault.',
-            factIds: base?.factIds ?? (target.missing?.factId ? [target.missing.factId] : []),
-            uploadedAt: new Date().toISOString(),
-            uploadedBy: auth.user.name,
-            replaces: base?.id,
-        };
         const g = target.gap;
-        // Bid-only documents stay with the tender; company documents go to the vault for reuse.
-        const viaVault = g?.scope === 'bid' ? [] : saveDocument(doc, target.missing?.id);
+        let viaVault: DocUsage[] = [];
+        // Bid-only documents stay with the tender (sample data until M6); company documents go to the vault.
+        if (g?.scope !== 'bid') {
+            setSaving(true);
+            setError(null);
+            try {
+                viaVault = await saveDocument({
+                    file,
+                    title: form.title.trim(),
+                    category: form.category,
+                    issuer: form.issuer.trim(),
+                    reference: form.reference.trim(),
+                    issuedAt: form.issuedAt,
+                    expiresAt: form.expiresAt,
+                    summary: base?.summary ?? target.missing?.why,
+                    factIds: base ? undefined : target.missing?.factId ? [target.missing.factId] : undefined,
+                    replaces: base?.id,
+                });
+            } catch (errors) {
+                setError(firstError(errors));
+                return;
+            } finally {
+                setSaving(false);
+            }
+        }
         if (g) {
             setGapStatusFor(g.tender.id, g.gapId, 'closed', g.scope === 'bid' ? `${form.title.trim()} added to this bid` : undefined);
             if (!viaVault.some((u) => u.tender.id === g.tender.id && u.code === g.code))
@@ -250,7 +255,7 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
                     className="animate-fade-up space-y-4"
                     onSubmit={(e) => {
                         e.preventDefault();
-                        if (valid) save();
+                        if (valid && !saving) void save();
                     }}
                 >
                     <div className="bg-muted/50 flex items-center gap-3 rounded-lg border p-3">
@@ -310,12 +315,19 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
                         </div>
                     </div>
 
+                    {error && (
+                        <p role="alert" className="text-status-not-met text-sm">
+                            {error}
+                        </p>
+                    )}
+
                     <div className="flex justify-end gap-2 pt-2">
-                        <Button type="button" variant="ghost" onClick={onClose}>
+                        <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={!valid}>
-                            {target.gap?.scope === 'bid' ? 'Add to this bid' : 'Save to vault'}
+                        <Button type="submit" disabled={!valid || saving}>
+                            {saving && <Loader2 className="size-4 animate-spin" />}
+                            {target.gap?.scope === 'bid' ? 'Add to this bid' : saving ? 'Saving…' : 'Save to vault'}
                         </Button>
                     </div>
                 </form>

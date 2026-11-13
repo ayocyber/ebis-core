@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\VaultDocument;
 use App\Support\Tenancy\CurrentTenant;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -49,6 +50,17 @@ class HandleInertiaRequests extends Middleware
             'tenants' => fn () => $request->user()?->tenants
                 ->map(fn ($t) => ['id' => $t->id, 'name' => $t->name, 'role' => $t->pivot->role->value])
                 ->values() ?? [],
+            // The evidence vault: the vault, profile, dashboard and tender pages all read it.
+            'vault' => function () {
+                if (app(CurrentTenant::class)->get() === null) {
+                    return null;
+                }
+
+                return [
+                    'documents' => VaultDocument::current()->with(['facts', 'uploader'])->latest()->get()
+                        ->map->toFrontend()->values(),
+                ];
+            },
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

@@ -3,12 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { classify, type EvidenceSlot, evidenceSlots } from '@/data/evidence-slots';
-import { saveDocument } from '@/hooks/use-vault';
+import { firstError, saveDocument } from '@/hooks/use-vault';
 import { formatBytes } from '@/lib/ebis';
 import { cn } from '@/lib/utils';
 import { vaultCategoryMeta, vaultCategoryOrder } from '@/lib/vault';
 import { type SharedData } from '@/types';
-import type { VaultCategory, VaultDocument } from '@/types/ebis';
+import type { VaultCategory } from '@/types/ebis';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowRight, Check, CheckCircle2, CircleSlash, FileUp, Loader2, Plus, ScanText, Sparkles, Trash2, UploadCloud } from 'lucide-react';
 import { useRef, useState } from 'react';
@@ -19,9 +19,11 @@ const OK_EXT = ['pdf', 'docx', 'png', 'jpg', 'jpeg'];
 interface Item {
     id: string;
     slotId?: string;
+    file: File;
     fileName: string;
     size: number;
-    phase: 'reading' | 'review' | 'added';
+    phase: 'reading' | 'review' | 'saving' | 'added';
+    error?: string;
     issuer: string;
     reference: string;
     expiresAt: string;
@@ -53,7 +55,7 @@ function suggestionFor(slot: EvidenceSlot | undefined) {
 }
 
 export default function OnboardingEvidence() {
-    const { auth, tenant } = usePage<SharedData>().props;
+    const { tenant } = usePage<SharedData>().props;
     const companyName = (tenant as { name?: string } | null)?.name ?? 'your company';
     const [items, setItems] = useState<Item[]>([]);
     const [notHeld, setNotHeld] = useState<string[]>([]);
@@ -76,6 +78,7 @@ export default function OnboardingEvidence() {
             added.push({
                 id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
                 slotId: forcedSlot === OTHER ? OTHER : slot?.id,
+                file: f,
                 fileName: f.name,
                 size: f.size,
                 phase: 'reading',
@@ -94,25 +97,18 @@ export default function OnboardingEvidence() {
     const confirm = (item: Item) => {
         if (!canConfirm(item)) return;
         const slot = evidenceSlots.find((s) => s.id === item.slotId);
-        const ext = item.fileName.split('.').pop()!.toLowerCase();
-        const doc: VaultDocument = {
-            id: `vd-${item.id}`,
+        update(item.id, { phase: 'saving', error: undefined });
+        saveDocument({
+            file: item.file,
             title: slot ? (slot.multiple ? item.fileName.replace(/\.[^.]+$/, '') : slot.title) : item.customTitle.trim(),
             category: slot ? slot.category : item.customCategory!,
-            fileName: item.fileName,
-            kind: ext === 'docx' ? 'docx' : 'pdf',
-            sizeBytes: item.size,
-            issuer: item.issuer || undefined,
-            reference: item.reference || undefined,
-            issuedAt: new Date().toISOString(),
-            expiresAt: item.expiresAt ? new Date(item.expiresAt).toISOString() : undefined,
+            issuer: item.issuer,
+            reference: item.reference,
+            expiresAt: item.expiresAt || undefined,
             summary: item.fact || (slot ? slot.why : 'Added during setup.'),
-            factIds: [],
-            uploadedAt: new Date().toISOString(),
-            uploadedBy: auth.user.name,
-        };
-        saveDocument(doc);
-        update(item.id, { phase: 'added' });
+        })
+            .then(() => update(item.id, { phase: 'added' }))
+            .catch((errors) => update(item.id, { phase: 'review', error: firstError(errors) }));
     };
 
     const pending = items.filter((i) => i.phase !== 'added');
@@ -398,18 +394,24 @@ function ReviewRow({
         <li className="animate-fade-up space-y-3 px-5 py-4">
             <div className="flex items-center gap-3">
                 <span className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-lg">
-                    {item.phase === 'reading' ? <Loader2 className="text-primary size-4 animate-spin" /> : <FileUp className="text-primary size-4" />}
+                    {item.phase === 'reading' || item.phase === 'saving' ? (
+                        <Loader2 className="text-primary size-4 animate-spin" />
+                    ) : (
+                        <FileUp className="text-primary size-4" />
+                    )}
                 </span>
                 <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{item.fileName}</p>
                     <p className="text-muted-foreground text-xs">
                         {item.phase === 'reading'
                             ? 'Reading…'
-                            : slot
-                              ? `Looks like: ${slot.title}`
-                              : other
-                                ? 'Your own document'
-                                : 'Not one EBIS recognises. Choose a type, or “Something else”'}{' '}
+                            : item.phase === 'saving'
+                              ? 'Saving to your vault…'
+                              : slot
+                                ? `Looks like: ${slot.title}`
+                                : other
+                                  ? 'Your own document'
+                                  : 'Not one EBIS recognises. Choose a type, or “Something else”'}{' '}
                         · {formatBytes(item.size)}
                     </p>
                 </div>
@@ -495,7 +497,12 @@ function ReviewRow({
                             </label>
                         </>
                     )}
-                    <div className="flex justify-end sm:col-span-2">
+                    <div className="flex items-center justify-end gap-3 sm:col-span-2">
+                        {item.error && (
+                            <p role="alert" className="text-status-not-met mr-auto text-xs">
+                                {item.error}
+                            </p>
+                        )}
                         <Button size="sm" onClick={onConfirm} disabled={!canConfirm(item)}>
                             <Check className="size-4" /> Confirm
                         </Button>

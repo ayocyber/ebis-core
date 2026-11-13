@@ -67,7 +67,7 @@ export default function CreateCompany({ isFirstCompany = true }: { isFirstCompan
                 setLookup({
                     state: 'found',
                     name: companyProfile.legalName,
-                    detail: `Active · incorporated ${new Date(companyProfile.incorporatedAt).getFullYear()} · ${companyProfile.registeredOffice}`,
+                    detail: `Active · incorporated ${new Date(companyProfile.incorporatedAt!).getFullYear()} · ${companyProfile.registeredOffice}`,
                 });
             } else {
                 setLookup({ state: 'missing' });

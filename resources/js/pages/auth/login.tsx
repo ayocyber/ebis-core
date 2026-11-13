@@ -99,7 +99,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                 </div>
 
                 <div className="text-muted-foreground text-center text-sm">
-                    New to EBIS Core?{' '}
+                    New to REA-NEP eProcurement?{' '}
                     <TextLink href={route('register')} tabIndex={5}>
                         Create an account
                     </TextLink>

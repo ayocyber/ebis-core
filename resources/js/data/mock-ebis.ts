@@ -1,5 +1,5 @@
 /**
- * Mock data for previewing the EBIS Core frontend before the API exists.
+ * Mock data for previewing the REA-NEP eProcurement frontend before the API exists.
  * Swap these exports for Inertia props once the backend lands.
  *
  * Scenario: Bluewave Networks Ltd, a 40-person network integrator in Sheffield,

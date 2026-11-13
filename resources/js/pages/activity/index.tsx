@@ -1,10 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { tenders } from '@/data/mock-ebis';
-import { type AuditCategory, auditCategoryMeta, auditCsv, useAudit } from '@/hooks/use-audit';
+import { type AuditCategory, type AuditEvent, auditCategoryMeta, auditCsv, useAudit } from '@/hooks/use-audit';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import { Head, Link } from '@inertiajs/react';
+import { type SharedData } from '@/types';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { Download, Lock, Search, SearchX, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -20,7 +21,8 @@ const initials = (name: string) =>
         .toUpperCase();
 
 export default function ActivityLog() {
-    const events = useAudit();
+    const { activity } = usePage<SharedData & { activity: AuditEvent[] }>().props;
+    const events = useAudit(activity);
     const [query, setQuery] = useState('');
     const [area, setArea] = useState<AuditCategory | ''>('');
     const [tender, setTender] = useState(() => {
@@ -90,7 +92,7 @@ export default function ActivityLog() {
                     <div>
                         <h1 className="text-2xl font-semibold tracking-tight">Audit log</h1>
                         <p className="text-muted-foreground mt-1 max-w-2xl text-sm">
-                            Every assessment, override, decision and change made in EBIS Core, newest first.
+                            Every assessment, override, decision and change made in REA-NEP eProcurement, newest first.
                         </p>
                     </div>
                     <Button variant="outline" onClick={exportCsv} disabled={!visible.length}>

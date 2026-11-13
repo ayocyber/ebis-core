@@ -1,4 +1,4 @@
-# EBIS Core (working name)
+# REA-NEP eProcurement (working name)
 
 Tender eligibility and bid preparation for SMEs. One Laravel 12 project with React + TypeScript pages through Inertia (Laravel React starter kit).
 
@@ -18,6 +18,10 @@ composer run dev          # server, queue, logs and Vite together
 ```
 
 Open http://localhost:8000, create an account, then create your company.
+
+Demo company (Bluewave Networks, matches the sample tenders): `php artisan db:seed --class=DemoSeeder`, then sign in as `emma@bluewave.example` / `password`.
+
+Expiry reminders run from the scheduler (`php artisan schedule:work` locally, a cron calling `schedule:run` in production). Run once by hand with `php artisan vault:expiry-alerts`.
 
 Development uses SQLite (`database/database.sqlite`). Switch to MySQL 8 before phase 1 (full-text search).
 
@@ -44,4 +48,5 @@ vendor/bin/pest
 ## Phase status
 
 - [x] Phase 0: starter kit, companies (tenants), roles, company switcher, members and invitations, tenant isolation tests, CI
+- [x] M1: company profile (versioned), evidence vault (private uploads, renewals, downloads), profile facts, append-only activity log, 90/30-day expiry emails
 - [ ] Phase 1: ingest (upload, ZIP packs, text extraction, OCR)

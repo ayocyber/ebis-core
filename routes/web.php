@@ -1,8 +1,12 @@
 <?php
 
 use App\Http\Controllers\AcceptInvitationController;
+use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\CompanyProfileController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\TenantSwitchController;
+use App\Http\Controllers\VaultDocumentController;
+use App\Models\AuditEvent;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -29,21 +33,23 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     Route::post('tenants/{tenant}/switch', TenantSwitchController::class)->name('tenants.switch');
 
     Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
+        return Inertia::render('dashboard', [
+            'recentActivity' => AuditEvent::latest('id')->limit(5)->get()->map->toFrontend(),
+        ]);
     })->name('dashboard');
 
-    // Evidence vault & company profile — frontend preview on mock data.
-    Route::get('vault', function () {
-        return Inertia::render('vault/index');
-    })->name('vault.index');
+    // M1: evidence vault, company profile and activity log.
+    Route::get('vault', [VaultDocumentController::class, 'index'])->name('vault.index');
+    Route::post('vault/documents', [VaultDocumentController::class, 'store'])->name('vault.store');
+    Route::get('vault/documents/{document}/download', [VaultDocumentController::class, 'download'])
+        ->whereUuid('document')->name('vault.download');
+    Route::delete('vault/documents/{document}', [VaultDocumentController::class, 'destroy'])
+        ->whereUuid('document')->name('vault.destroy');
 
-    Route::get('activity', function () {
-        return Inertia::render('activity/index');
-    })->name('activity.index');
+    Route::get('company', [CompanyProfileController::class, 'show'])->name('company.profile');
+    Route::patch('company', [CompanyProfileController::class, 'update'])->name('company.update');
 
-    Route::get('company', function () {
-        return Inertia::render('company/profile');
-    })->name('company.profile');
+    Route::get('activity', [ActivityController::class, 'index'])->name('activity.index');
 
     // Tenders — frontend preview on mock data until the tender API lands.
     Route::get('tenders', function () {

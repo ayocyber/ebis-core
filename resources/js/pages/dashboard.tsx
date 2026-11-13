@@ -3,7 +3,7 @@ import { DeadlineChip } from '@/components/ebis/badges';
 import { Button } from '@/components/ui/button';
 import { results } from '@/data/mock-dashboard';
 import { tenders } from '@/data/mock-ebis';
-import { useAudit } from '@/hooks/use-audit';
+import { type AuditEvent, useAudit } from '@/hooks/use-audit';
 import { useWorkspaces } from '@/hooks/use-tender-workspace';
 import { useVault } from '@/hooks/use-vault';
 import AppLayout from '@/layouts/app-layout';
@@ -30,7 +30,7 @@ export default function Dashboard() {
     const live = useMemo(() => tenders.filter((t) => t.stage !== 'submitted').sort((a, b) => +new Date(a.deadline) - +new Date(b.deadline)), []);
     const views = useWorkspaces(live.map((t) => t.id));
     const vault = useVault();
-    const activity = useAudit().slice(0, 5);
+    const activity = useAudit(usePage<SharedData & { recentActivity: AuditEvent[] }>().props.recentActivity).slice(0, 5);
 
     const items = attentionItems(live, views, vault.documents, vault.missing, now);
     const shown = showAll ? items : items.slice(0, 5);

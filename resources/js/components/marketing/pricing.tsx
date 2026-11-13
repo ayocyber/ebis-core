@@ -68,7 +68,7 @@ export function Pricing() {
             <SectionHeading
                 eyebrow="Pricing"
                 title="Priced for SMEs, not multinationals."
-                text="Start free. Upgrade when EBIS Core wins you a tender."
+                text="Start free. Upgrade when REA-NEP eProcurement wins you a tender."
             />
 
             <div className="reveal mt-10 flex justify-center">

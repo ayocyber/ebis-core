@@ -1,5 +1,5 @@
 /**
- * EBIS Core domain types.
+ * REA-NEP eProcurement domain types.
  *
  * These mirror the shape the Laravel API/Inertia props will eventually send.
  * Dates are ISO-8601 strings; money is minor-unit free (whole currency units).
@@ -16,7 +16,7 @@ export interface Money {
     currency: 'GBP' | 'EUR' | 'USD';
 }
 
-/** The ten workflow stages from the EBIS Core spec. */
+/** The ten workflow stages from the REA-NEP eProcurement spec. */
 export type TenderStage =
     | 'intake' // 1. upload / import
     | 'extraction' // 2. parse documents & metadata
@@ -312,7 +312,7 @@ export interface CompanyProfile {
     legalName: string;
     tradingName: string;
     companyNumber: string;
-    incorporatedAt: ISODate;
+    incorporatedAt: ISODate | null;
     registeredOffice: string;
     vatNumber: string;
     cdpId: string;

@@ -47,7 +47,7 @@ export default function AcceptInvitation({ token, invitation, emailMatches }: Pr
     };
 
     return (
-        <AuthLayout title={`Join ${company}`} description="You’ve been invited to work on tenders together in EBIS Core.">
+        <AuthLayout title={`Join ${company}`} description="You’ve been invited to work on tenders together in REA-NEP eProcurement.">
             <Head title={`Join ${company}`} />
 
             <div className="bg-card overflow-hidden rounded-2xl border">

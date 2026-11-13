@@ -16,6 +16,13 @@ return [
     'default' => env('FILESYSTEM_DISK', 'local'),
 
     /*
+    | Where evidence vault files go. Private: only the download route serves them.
+    | Use a UK-region S3 bucket in production (data residency).
+    */
+
+    'vault_disk' => env('VAULT_DISK', 'local'),
+
+    /*
     |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------

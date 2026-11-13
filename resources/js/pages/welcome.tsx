@@ -82,7 +82,7 @@ function Hero() {
                     </h1>
 
                     <p className="animate-fade-up text-muted-foreground mx-auto mt-6 max-w-2xl text-base text-pretty [animation-delay:120ms] sm:text-lg">
-                        EBIS Core reads the whole tender pack, checks every requirement against your company’s documents and shows the proof behind
+                        REA-NEP eProcurement reads the whole tender pack, checks every requirement against your company’s documents and shows the proof behind
                         each answer — so your team only writes the bids it can win.
                     </p>
 
@@ -93,7 +93,7 @@ function Hero() {
                             className="h-12 w-full rounded-full px-7 text-[15px] shadow-[0_12px_32px_-10px_var(--glow)] sm:w-auto"
                         >
                             <Link href={auth.user ? route('dashboard') : route('register')}>
-                                {auth.user ? 'Open EBIS Core' : 'Start checking tenders'} <ArrowRight />
+                                {auth.user ? 'Open REA-NEP eProcurement' : 'Start checking tenders'} <ArrowRight />
                             </Link>
                         </Button>
                         <Button
@@ -476,7 +476,7 @@ function Workflow() {
 const faqs = [
     {
         q: 'What documents can I upload?',
-        a: 'Tender packs in PDF, DOCX or ZIP up to 50 MB each — invitations to tender, specifications, award criteria and forms. EBIS Core extracts the metadata and every requirement automatically.',
+        a: 'Tender packs in PDF, DOCX or ZIP up to 50 MB each — invitations to tender, specifications, award criteria and forms. REA-NEP eProcurement extracts the metadata and every requirement automatically.',
     },
     {
         q: 'How does it decide if we meet a requirement?',
@@ -561,7 +561,7 @@ function FinalCta() {
                             className="h-12 w-full rounded-full bg-white px-7 text-[15px] text-[#00036C] hover:bg-white/90 sm:w-auto"
                         >
                             <Link href={auth.user ? route('dashboard') : route('register')}>
-                                {auth.user ? 'Open EBIS Core' : 'Create your account'} <ArrowRight />
+                                {auth.user ? 'Open REA-NEP eProcurement' : 'Create your account'} <ArrowRight />
                             </Link>
                         </Button>
                         <Button

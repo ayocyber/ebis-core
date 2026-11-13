@@ -1,7 +1,7 @@
 import { SVGAttributes, useId } from 'react';
 
 /**
- * EBIS Core mark — a gradient tile with a three-line checklist,
+ * REA-NEP eProcurement mark — a gradient tile with a three-line checklist,
  * the first line ticked and EBIS-red bullets. Self-contained colours so it reads on any surface.
  */
 export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {

@@ -5,11 +5,16 @@
 | Every tenant-owned model and route added later gets a case in this file.
 */
 
+use App\Enums\AuditCategory;
 use App\Enums\TenantRole;
 use App\Models\Invitation;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\VaultDocument;
+use App\Support\AuditLog;
 use App\Support\Tenancy\CurrentTenant;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function () {
     $this->alice = User::factory()->create();
@@ -74,4 +79,45 @@ it('does not let a member of two companies act in one through the other', functi
     $this->globex->addMember($this->alice, TenantRole::Viewer);
 
     $this->actingAs($this->alice)->delete("/settings/invitations/{$this->globexInvite->id}")->assertNotFound();
+});
+
+/*
+| M1: company profile, evidence vault, activity log.
+*/
+
+it('does not show, download or delete another company\'s vault documents', function () {
+    $current = app(CurrentTenant::class);
+    $globexDoc = $current->runAs($this->globex, fn () => VaultDocument::factory()->create(['title' => 'Globex secret']));
+    $current->runAs($this->acme, fn () => VaultDocument::factory()->create(['title' => 'Acme cert']));
+
+    $this->actingAs($this->alice)->get('/vault')
+        ->assertInertia(fn ($page) => $page->has('vault.documents', 1)->where('vault.documents.0.title', 'Acme cert'));
+    $this->actingAs($this->alice)->get("/vault/documents/{$globexDoc->id}/download")->assertNotFound();
+    $this->actingAs($this->alice)->delete("/vault/documents/{$globexDoc->id}")->assertNotFound();
+
+    expect(VaultDocument::withoutGlobalScopes()->find($globexDoc->id)->trashed())->toBeFalse();
+});
+
+it('does not let an upload replace another company\'s document', function () {
+    Storage::fake('local');
+    $globexDoc = app(CurrentTenant::class)->runAs($this->globex, fn () => VaultDocument::factory()->create());
+
+    $this->actingAs($this->alice)->post('/vault/documents', [
+        'file' => UploadedFile::fake()->create('x.pdf', 10, 'application/pdf'),
+        'title' => 'Sneaky', 'category' => 'other', 'replaces_id' => $globexDoc->id,
+    ])->assertNotFound();
+
+    expect(VaultDocument::withoutGlobalScopes()->find($globexDoc->id)->archived_at)->toBeNull();
+});
+
+it('keeps company profiles and activity logs separate', function () {
+    $current = app(CurrentTenant::class);
+    $current->runAs($this->globex, fn () => AuditLog::record(AuditCategory::Profile, 'updated the company profile', 'Globex only'));
+
+    $this->actingAs($this->bob)->patch('/company', ['legalName' => 'Globex Corp', 'employees' => 900]);
+
+    $this->actingAs($this->alice)->get('/company')
+        ->assertInertia(fn ($page) => $page->where('profile.legalName', $this->acme->name)->where('profile.employees', 0));
+    $this->actingAs($this->alice)->get('/activity')
+        ->assertInertia(fn ($page) => $page->has('activity', 0));
 });

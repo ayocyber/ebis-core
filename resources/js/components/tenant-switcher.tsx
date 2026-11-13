@@ -31,7 +31,7 @@ export function TenantSwitcher() {
                             </span>
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-semibold">{tenant?.name ?? 'No company'}</span>
-                                <span className="text-muted-foreground truncate text-xs">{role ? roleLabel(role) : 'EBIS Core'}</span>
+                                <span className="text-muted-foreground truncate text-xs">{role ? roleLabel(role) : 'REA-NEP eProcurement'}</span>
                             </div>
                             <ChevronsUpDown className="ml-auto size-4" />
                         </SidebarMenuButton>

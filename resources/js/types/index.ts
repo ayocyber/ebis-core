@@ -1,3 +1,4 @@
+import type { VaultDocument } from '@/types/ebis';
 import { LucideIcon } from 'lucide-react';
 
 export interface Auth {
@@ -32,6 +33,8 @@ export interface SharedData {
     /** Every company the user belongs to, for the switcher. */
     tenants: TenantSummary[];
     flash: { success?: string | null; error?: string | null };
+    /** The current company's evidence vault (null before onboarding). */
+    vault: { documents: VaultDocument[] } | null;
     [key: string]: unknown;
 }
 
