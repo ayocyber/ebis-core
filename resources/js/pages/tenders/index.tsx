@@ -49,7 +49,7 @@ export default function TendersIndex() {
                 <div className="animate-fade-up flex flex-col gap-1">
                     <h1 className="text-2xl font-semibold tracking-tight">Tenders</h1>
                     <p className="text-muted-foreground text-sm">
-                        Upload a tender pack or pick one from a public feed. REA-NEP eProcurement reads it, extracts every requirement and checks your
+                        Upload a tender pack or pick one from a public feed. ProcurPilot reads it, extracts every requirement and checks your
                         eligibility.
                     </p>
                 </div>

@@ -155,13 +155,13 @@ export function checkRules(rules: SubmissionRule[], sections: BidSection[], docu
                 break;
             }
             case 'r-naming':
-                note = 'EBIS renames every file to this pattern when it builds the pack';
+                note = 'ProcurPilot renames every file to this pattern when it builds the pack';
                 break;
             case 'r-font':
-                note = 'Applied when EBIS exports your response';
+                note = 'Applied when ProcurPilot exports your response';
                 break;
             case 'r-portal':
-                note = 'You upload the pack yourself. EBIS never submits for you';
+                note = 'You upload the pack yourself. ProcurPilot never submits for you';
                 break;
         }
         return { rule, breaches, note };

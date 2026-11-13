@@ -99,7 +99,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                 </div>
 
                 <div className="text-muted-foreground text-center text-sm">
-                    New to REA-NEP eProcurement?{' '}
+                    New to ProcurPilot?{' '}
                     <TextLink href={route('register')} tabIndex={5}>
                         Create an account
                     </TextLink>

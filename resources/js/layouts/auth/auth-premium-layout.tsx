@@ -1,6 +1,5 @@
 import { StatusBadge } from '@/components/ebis/badges';
 import { SiteLogo } from '@/components/marketing/site-header';
-import { PoweredByEbis } from '@/components/powered-by-ebis';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { BadgeCheck, FileText, Quote, Sparkles } from 'lucide-react';
 
@@ -35,8 +34,7 @@ export default function AuthPremiumLayout({ children, title, description }: Prop
                 </div>
 
                 <div className="text-muted-foreground flex flex-wrap items-center justify-between gap-3 text-xs">
-                    <span>© {new Date().getFullYear()} EBIS Tech Group</span>
-                    <PoweredByEbis compact className="px-0" />
+                    <span>© {new Date().getFullYear()} ProcurPilot</span>
                 </div>
             </div>
 

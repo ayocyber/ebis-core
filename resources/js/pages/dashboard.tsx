@@ -140,7 +140,7 @@ export default function Dashboard() {
                                 <div className="flex flex-col items-center gap-2 px-5 py-10 text-center">
                                     <CheckCircle2 className="text-status-met size-8" />
                                     <p className="font-medium">You’re all caught up</p>
-                                    <p className="text-muted-foreground text-sm">EBIS will flag anything new here.</p>
+                                    <p className="text-muted-foreground text-sm">ProcurPilot will flag anything new here.</p>
                                 </div>
                             ) : (
                                 <ul className="divide-y">
@@ -266,7 +266,7 @@ export default function Dashboard() {
                                             <span
                                                 className={cn(
                                                     'ring-card relative flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ring-4',
-                                                    a.by === 'EBIS' ? 'bg-primary text-primary-foreground' : 'bg-muted',
+                                                    a.by === 'ProcurPilot' ? 'bg-primary text-primary-foreground' : 'bg-muted',
                                                 )}
                                             >
                                                 {a.by
@@ -362,7 +362,7 @@ function bidStatus(t: Tender, view: ReturnType<typeof useWorkspaces>[string], do
         };
     }
     if (t.stage === 'requirements') return { label: 'Check requirements', tone: 'neutral' };
-    return { label: 'EBIS is reading the pack', tone: 'neutral' };
+    return { label: 'ProcurPilot is reading the pack', tone: 'neutral' };
 }
 
 const toneText = { good: 'text-status-met', warn: 'text-status-partial', bad: 'text-status-not-met', neutral: 'text-muted-foreground' };

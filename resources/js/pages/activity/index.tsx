@@ -92,7 +92,7 @@ export default function ActivityLog() {
                     <div>
                         <h1 className="text-2xl font-semibold tracking-tight">Audit log</h1>
                         <p className="text-muted-foreground mt-1 max-w-2xl text-sm">
-                            Every assessment, override, decision and change made in REA-NEP eProcurement, newest first.
+                            Every assessment, override, decision and change made in ProcurPilot, newest first.
                         </p>
                     </div>
                     <Button variant="outline" onClick={exportCsv} disabled={!visible.length}>
@@ -176,10 +176,10 @@ export default function ActivityLog() {
                                                     <span
                                                         className={cn(
                                                             'flex size-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold',
-                                                            e.by === 'EBIS' ? 'bg-primary text-primary-foreground' : 'bg-muted',
+                                                            e.by === 'ProcurPilot' ? 'bg-primary text-primary-foreground' : 'bg-muted',
                                                         )}
                                                     >
-                                                        {e.by === 'EBIS' ? 'EB' : initials(e.by)}
+                                                        {e.by === 'ProcurPilot' ? 'PP' : initials(e.by)}
                                                     </span>
                                                     <div className="min-w-0 text-sm">
                                                         <p className="leading-snug">

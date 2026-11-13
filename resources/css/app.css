@@ -134,8 +134,8 @@
 }
 
 /*
-  REA-NEP eProcurement theme — premium dark/light.
-  EBIS blue primary with EBIS red accent; near-black dark canvas, crisp light canvas.
+  ProcurPilot theme — premium dark/light.
+  ProcurPilot blue primary with ProcurPilot red accent; near-black dark canvas, crisp light canvas.
 */
 :root {
     --background: hsl(240, 20%, 99%);

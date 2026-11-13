@@ -19,7 +19,7 @@ export function SiteLogo({ className }: { className?: string }) {
     return (
         <Link href={route('home')} className={cn('flex items-center gap-2.5', className)}>
             <AppLogoIcon className="size-8 drop-shadow-[0_4px_12px_rgba(35,45,240,0.45)]" />
-            <span className="text-[15px] font-semibold tracking-tight">REA-NEP eProcurement</span>
+            <span className="text-[15px] font-semibold tracking-tight">ProcurPilot</span>
         </Link>
     );
 }

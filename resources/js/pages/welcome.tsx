@@ -5,7 +5,6 @@ import { Pricing } from '@/components/marketing/pricing';
 import { Backdrop, Eyebrow, SectionHeading, SpotlightCard } from '@/components/marketing/primitives';
 import { ProductShot } from '@/components/marketing/product-shot';
 import { SiteHeader, siteLinks, SiteLogo } from '@/components/marketing/site-header';
-import { PoweredByEbis } from '@/components/powered-by-ebis';
 import { Button } from '@/components/ui/button';
 import { useReveal } from '@/hooks/use-reveal';
 import { stages } from '@/lib/ebis';
@@ -82,7 +81,7 @@ function Hero() {
                     </h1>
 
                     <p className="animate-fade-up text-muted-foreground mx-auto mt-6 max-w-2xl text-base text-pretty [animation-delay:120ms] sm:text-lg">
-                        REA-NEP eProcurement reads the whole tender pack, checks every requirement against your company’s documents and shows the proof behind
+                        ProcurPilot reads the whole tender pack, checks every requirement against your company’s documents and shows the proof behind
                         each answer — so your team only writes the bids it can win.
                     </p>
 
@@ -93,7 +92,7 @@ function Hero() {
                             className="h-12 w-full rounded-full px-7 text-[15px] shadow-[0_12px_32px_-10px_var(--glow)] sm:w-auto"
                         >
                             <Link href={auth.user ? route('dashboard') : route('register')}>
-                                {auth.user ? 'Open REA-NEP eProcurement' : 'Start checking tenders'} <ArrowRight />
+                                {auth.user ? 'Open ProcurPilot' : 'Start checking tenders'} <ArrowRight />
                             </Link>
                         </Button>
                         <Button
@@ -476,7 +475,7 @@ function Workflow() {
 const faqs = [
     {
         q: 'What documents can I upload?',
-        a: 'Tender packs in PDF, DOCX or ZIP up to 50 MB each — invitations to tender, specifications, award criteria and forms. REA-NEP eProcurement extracts the metadata and every requirement automatically.',
+        a: 'Tender packs in PDF, DOCX or ZIP up to 50 MB each — invitations to tender, specifications, award criteria and forms. ProcurPilot extracts the metadata and every requirement automatically.',
     },
     {
         q: 'How does it decide if we meet a requirement?',
@@ -536,7 +535,7 @@ function FinalCta() {
     return (
         <section className="px-4 pb-24 sm:px-6 sm:pb-32">
             <div className="reveal relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-[#00036C] px-6 py-16 text-center text-white shadow-[0_30px_80px_-30px_rgba(0,3,108,0.7)] sm:px-12 sm:py-24 2xl:max-w-7xl dark:bg-[#05087a]">
-                {/* EBIS blue field with a red glow and dot texture */}
+                {/* ProcurPilot blue field with a red glow and dot texture */}
                 <div aria-hidden className="absolute inset-0 bg-[radial-gradient(80%_90%_at_50%_0%,rgba(47,59,255,0.75),transparent_65%)]" />
                 <div aria-hidden className="animate-glow absolute -right-24 -bottom-32 h-80 w-80 rounded-full bg-[#E3262C]/45 blur-[100px]" />
                 <div aria-hidden className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-[#2F3BFF]/40 blur-[90px]" />
@@ -561,7 +560,7 @@ function FinalCta() {
                             className="h-12 w-full rounded-full bg-white px-7 text-[15px] text-[#00036C] hover:bg-white/90 sm:w-auto"
                         >
                             <Link href={auth.user ? route('dashboard') : route('register')}>
-                                {auth.user ? 'Open REA-NEP eProcurement' : 'Create your account'} <ArrowRight />
+                                {auth.user ? 'Open ProcurPilot' : 'Create your account'} <ArrowRight />
                             </Link>
                         </Button>
                         <Button
@@ -591,7 +590,6 @@ function SiteFooter() {
                     <p className="text-muted-foreground max-w-xs text-sm">
                         Tender eligibility, gap analysis and bid readiness for growing businesses.
                     </p>
-                    <PoweredByEbis className="-ml-2" />
                 </div>
                 <div className="space-y-3 text-sm">
                     <p className="font-medium">Product</p>
@@ -625,7 +623,7 @@ function SiteFooter() {
                 </div>
             </div>
             <div className="text-muted-foreground mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 border-t px-4 py-6 text-xs sm:flex-row sm:px-6 2xl:max-w-7xl">
-                <span>© {new Date().getFullYear()} EBIS Tech Group. All rights reserved.</span>
+                <span>© {new Date().getFullYear()} ProcurPilot Tech Group. All rights reserved.</span>
                 <span>Built for UK SMEs 🇬🇧</span>
             </div>
         </footer>

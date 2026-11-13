@@ -17,7 +17,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
 COPY --from=vendor /app/vendor ./vendor
-ARG VITE_APP_NAME="REA-NEP eProcurement"
+ARG VITE_APP_NAME="ProcurPilot"
 ENV VITE_APP_NAME=${VITE_APP_NAME}
 RUN npm run build
 

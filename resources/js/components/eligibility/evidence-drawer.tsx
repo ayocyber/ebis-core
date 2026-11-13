@@ -124,7 +124,7 @@ function DrawerBody({
                     <div className="text-sm">
                         <p className="font-medium">{a.summary}</p>
                         <p className="text-muted-foreground mt-1 text-xs">
-                            Assessed by {a.assessedBy === 'ebis-engine' ? 'EBIS engine' : a.assessedBy} ·{' '}
+                            Assessed by {a.assessedBy === 'ebis-engine' ? 'ProcurPilot engine' : a.assessedBy} ·{' '}
                             {formatDate(a.assessedAt, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                         </p>
                     </div>

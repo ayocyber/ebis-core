@@ -11,11 +11,11 @@ use Illuminate\Database\Eloquent\Model;
  * The only way to write to the activity log (EVD-05).
  *
  * Entries go to the current company. With no user (scheduled jobs, the engine)
- * the entry is attributed to "EBIS".
+ * the entry is attributed to "ProcurPilot".
  */
 class AuditLog
 {
-    public const SYSTEM = 'EBIS';
+    public const SYSTEM = 'ProcurPilot';
 
     public static function record(
         AuditCategory $category,

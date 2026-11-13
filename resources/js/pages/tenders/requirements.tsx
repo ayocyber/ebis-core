@@ -83,7 +83,7 @@ export default function TenderRequirements({ tenderId }: { tenderId: string }) {
                 Object.keys(state.fields).length && `${Object.keys(state.fields).length} tender details corrected`,
             ].filter(Boolean);
             log('confirmed the requirements for', tender.reference, [`${live.length} requirements`, ...changes].join(' · '));
-            log('ran the eligibility check on', tender.reference, `${live.length} requirements checked against the company profile`, 'EBIS');
+            log('ran the eligibility check on', tender.reference, `${live.length} requirements checked against the company profile`, 'ProcurPilot');
             setRunning(false);
         }, 1600);
     };
@@ -117,7 +117,7 @@ export default function TenderRequirements({ tenderId }: { tenderId: string }) {
                     <div className="border-primary/30 bg-primary/[0.04] animate-fade-up flex items-center gap-3 rounded-xl border px-4 py-3 text-sm">
                         <Loader2 className="text-primary size-4 shrink-0 animate-spin" />
                         <p>
-                            <span className="font-medium">EBIS is still reading this pack.</span>{' '}
+                            <span className="font-medium">ProcurPilot is still reading this pack.</span>{' '}
                             <span className="text-muted-foreground">You can start checking what it has found so far.</span>
                         </p>
                     </div>
@@ -126,9 +126,9 @@ export default function TenderRequirements({ tenderId }: { tenderId: string }) {
                 {/* Intro + summary */}
                 <section className="animate-fade-up flex flex-col gap-4 [animation-delay:60ms] lg:flex-row lg:items-end lg:justify-between">
                     <div className="space-y-1">
-                        <h2 className="text-xl font-semibold tracking-tight">Check what EBIS found</h2>
+                        <h2 className="text-xl font-semibold tracking-tight">Check what ProcurPilot found</h2>
                         <p className="text-muted-foreground max-w-2xl text-sm text-pretty">
-                            EBIS read the tender pack and pulled out every requirement with the clause it came from. Fix anything it got wrong before
+                            ProcurPilot read the tender pack and pulled out every requirement with the clause it came from. Fix anything it got wrong before
                             the eligibility check runs. Items it wasn’t sure about are flagged.
                         </p>
                     </div>
@@ -277,7 +277,7 @@ export default function TenderRequirements({ tenderId }: { tenderId: string }) {
                         <section className="bg-card rounded-2xl border" aria-labelledby="read-title">
                             <div className="border-b px-5 py-3.5">
                                 <h3 id="read-title" className="text-sm font-semibold">
-                                    What EBIS read
+                                    What ProcurPilot read
                                 </h3>
                                 <p className="text-muted-foreground text-xs">
                                     {problems.length
@@ -451,7 +451,7 @@ function RequirementRow({
                     {flagged ? (
                         <span
                             className="bg-status-partial/10 text-status-partial ring-status-partial/25 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset"
-                            title="EBIS isn’t sure it read this correctly"
+                            title="ProcurPilot isn’t sure it read this correctly"
                         >
                             Check this · {pct}%
                         </span>
@@ -578,7 +578,7 @@ function ConfirmCard({
                     </>
                 )}
             </Button>
-            <p className="text-muted-foreground text-xs">EBIS then checks each one against your company profile and evidence vault.</p>
+            <p className="text-muted-foreground text-xs">ProcurPilot then checks each one against your company profile and evidence vault.</p>
         </section>
     );
 }
@@ -690,7 +690,7 @@ function RequirementForm({
             <DialogHeader>
                 <DialogTitle>{isNew ? 'Add a requirement' : `Edit ${target.code}`}</DialogTitle>
                 <DialogDescription>
-                    {isNew ? 'Something EBIS missed. It will be checked like the others.' : 'Your change is kept with this tender’s history.'}
+                    {isNew ? 'Something ProcurPilot missed. It will be checked like the others.' : 'Your change is kept with this tender’s history.'}
                 </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">

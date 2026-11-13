@@ -21,7 +21,7 @@ it('lists the log newest first in the frontend shape', function () {
     $this->actingAs($this->owner)->get('/activity')
         ->assertInertia(fn ($page) => $page->component('activity/index')
             ->has('activity', 2)
-            ->where('activity.0.by', 'EBIS')
+            ->where('activity.0.by', 'ProcurPilot')
             ->where('activity.0.category', 'vault')
             ->where('activity.1.by', 'James Oliver')
             ->where('activity.1.detail', 'Employees 38 → 42')

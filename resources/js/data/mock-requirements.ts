@@ -11,7 +11,7 @@ export interface ExtractedField {
     key: 'buyer' | 'reference' | 'deadline' | 'clarification' | 'value' | 'lots' | 'portal';
     label: string;
     value: string;
-    /** Where EBIS read it, or undefined if it couldn't find it */
+    /** Where ProcurPilot read it, or undefined if it couldn't find it */
     source?: string;
     confidence: number;
     required?: boolean;
@@ -24,7 +24,7 @@ export interface ReadDocument {
     name: string;
     pages?: number;
     method: 'text' | 'ocr' | 'spreadsheet';
-    /** Pages or parts EBIS could not read reliably */
+    /** Pages or parts ProcurPilot could not read reliably */
     problems: { id: string; location: string; problem: string }[];
 }
 
@@ -148,7 +148,7 @@ export function documentsRead(t: Tender): ReadDocument[] {
                 {
                     id: 'p-price-hidden',
                     location: 'Sheet “Rates_Calc” (hidden)',
-                    problem: 'Hidden, password-protected sheet. EBIS could not read it.',
+                    problem: 'Hidden, password-protected sheet. ProcurPilot could not read it.',
                 },
             ],
         },

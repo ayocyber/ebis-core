@@ -1,4 +1,4 @@
-# REA-NEP eProcurement (working name)
+# ProcurPilot
 
 Tender eligibility and bid preparation for SMEs. One Laravel 12 project with React + TypeScript pages through Inertia (Laravel React starter kit).
 

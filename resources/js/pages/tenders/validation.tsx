@@ -141,7 +141,7 @@ export default function TenderValidation({ tenderId }: { tenderId: string }) {
                                                   : 'Ready to sign off'}
                                         </h2>
                                         <p className="text-muted-foreground text-sm">
-                                            EBIS checked the decision, every gap, the compliance matrix, the documents, the tender’s submission rules
+                                            ProcurPilot checked the decision, every gap, the compliance matrix, the documents, the tender’s submission rules
                                             and whether your sections agree with each other.
                                         </p>
                                     </div>
@@ -453,7 +453,7 @@ function SignedOffState({
                         <span className="bg-primary text-primary-foreground flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold">
                             3
                         </span>
-                        Keep the portal’s receipt — EBIS will track the award decision.
+                        Keep the portal’s receipt — ProcurPilot will track the award decision.
                     </li>
                 </ol>
 

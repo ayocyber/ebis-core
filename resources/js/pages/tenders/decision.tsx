@@ -109,7 +109,7 @@ export default function TenderDecision({ tenderId }: { tenderId: string }) {
                             />
                             <div className="relative flex flex-col gap-6 sm:flex-row sm:items-center">
                                 <div className="min-w-0 flex-1 space-y-3">
-                                    <p className="text-muted-foreground text-xs font-semibold tracking-[0.12em] uppercase">EBIS recommendation</p>
+                                    <p className="text-muted-foreground text-xs font-semibold tracking-[0.12em] uppercase">ProcurPilot recommendation</p>
                                     <div className="flex flex-wrap items-center gap-3">
                                         <span
                                             className={cn(

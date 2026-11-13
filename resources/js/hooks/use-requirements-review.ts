@@ -3,7 +3,7 @@ import type { Requirement, Tender } from '@/types/ebis';
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
 
 /**
- * Requirements review (TUN-02/03, ING-04, TUN-06): the user's edits on top of what EBIS
+ * Requirements review (TUN-02/03, ING-04, TUN-06): the user's edits on top of what ProcurPilot
  * extracted. In memory until the backend stores versions and the audit log.
  */
 export interface ReviewState {

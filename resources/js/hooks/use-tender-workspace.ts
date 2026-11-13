@@ -43,8 +43,8 @@ export interface ScoreRun {
 
 /** Earlier checks, so the first visit already has a "previous" score to compare with. */
 const seedHistory = (): ScoreRun[] => [
-    { at: '2026-10-30T09:05:00Z', score: 18, critical: 11, by: 'EBIS' },
-    { at: '2026-11-01T15:50:00Z', score: 24, critical: 9, by: 'EBIS' },
+    { at: '2026-10-30T09:05:00Z', score: 18, critical: 11, by: 'ProcurPilot' },
+    { at: '2026-11-01T15:50:00Z', score: 24, critical: 9, by: 'ProcurPilot' },
 ];
 
 type SectionPatch = Partial<Pick<BidSection, 'body' | 'status' | 'assignee'>>;
@@ -68,7 +68,7 @@ function initialVersions(tenderId: string): WorkspaceState['versions'] {
     return Object.fromEntries(
         bidSectionsFor(tenderId)
             .filter((s) => s.body.trim())
-            .map((s) => [s.id, [{ id: `v0-${s.id}`, at: '2026-10-30T16:00:00Z', by: s.assignee ?? 'EBIS', label: 'First draft', body: s.body }]]),
+            .map((s) => [s.id, [{ id: `v0-${s.id}`, at: '2026-10-30T16:00:00Z', by: s.assignee ?? 'ProcurPilot', label: 'First draft', body: s.body }]]),
     );
 }
 
@@ -266,7 +266,7 @@ export function useTenderWorkspace(tenderId: string) {
             const s = get(tenderId);
             const last = s.scoreHistory[s.scoreHistory.length - 1];
             if (!manual && last && last.score === score && last.critical === critical) return;
-            const run: ScoreRun = { at: new Date().toISOString(), score, critical, by: manual ? currentActor() : 'EBIS' };
+            const run: ScoreRun = { at: new Date().toISOString(), score, critical, by: manual ? currentActor() : 'ProcurPilot' };
             set(tenderId, { ...s, scoreHistory: [...s.scoreHistory, run] });
         },
         [tenderId],

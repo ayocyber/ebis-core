@@ -104,7 +104,7 @@ export default function CreateCompany({ isFirstCompany = true }: { isFirstCompan
                             {isFirstCompany ? 'Tell us about your company' : 'Add another company'}
                         </h1>
                         <p className="text-muted-foreground max-w-2xl text-pretty">
-                            The basics EBIS needs to check you against tenders. Tenders, evidence and bids are kept separately for each company, and
+                            The basics ProcurPilot needs to check you against tenders. Tenders, evidence and bids are kept separately for each company, and
                             you will be its Owner.
                         </p>
                     </div>
@@ -215,7 +215,7 @@ export default function CreateCompany({ isFirstCompany = true }: { isFirstCompan
 
                         {/* Work */}
                         <section className="space-y-5 p-5 sm:p-6" aria-labelledby="work-title">
-                            <SectionTitle id="work-title" n={2} title="What you do" hint="Helps EBIS spot tenders that fit you." />
+                            <SectionTitle id="work-title" n={2} title="What you do" hint="Helps ProcurPilot spot tenders that fit you." />
 
                             <fieldset className="grid gap-2">
                                 <legend className="mb-2 text-sm font-medium">Sectors you bid in</legend>
@@ -316,7 +316,7 @@ export default function CreateCompany({ isFirstCompany = true }: { isFirstCompan
                             <NextStep
                                 icon={UploadCloud}
                                 title="Your documents"
-                                text="Drop in certificates, insurance and accounts. EBIS reads them once and reuses them for every bid."
+                                text="Drop in certificates, insurance and accounts. ProcurPilot reads them once and reuses them for every bid."
                             />
                             <NextStep
                                 icon={FileSearch}

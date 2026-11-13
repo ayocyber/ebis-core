@@ -106,7 +106,7 @@ return new class extends Migration
             $table->id();
             $table->foreignUuid('tenant_id')->constrained()->cascadeOnDelete();
             $table->foreignId('actor_id')->nullable()->constrained('users')->nullOnDelete();
-            // Name at the time of the action; null actor + "EBIS" = the system.
+            // Name at the time of the action; null actor + "ProcurPilot" = the system.
             $table->string('actor_name');
             $table->string('category', 16);
             $table->string('action');

@@ -18,7 +18,7 @@ interface Plan {
 }
 
 /**
- * DRAFT PRICING — placeholder figures for review by EBIS management.
+ * DRAFT PRICING — placeholder figures for review by ProcurPilot management.
  * Edit this array to change every price on the site.
  */
 export const plans: Plan[] = [
@@ -68,7 +68,7 @@ export function Pricing() {
             <SectionHeading
                 eyebrow="Pricing"
                 title="Priced for SMEs, not multinationals."
-                text="Start free. Upgrade when REA-NEP eProcurement wins you a tender."
+                text="Start free. Upgrade when ProcurPilot wins you a tender."
             />
 
             <div className="reveal mt-10 flex justify-center">

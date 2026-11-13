@@ -90,7 +90,7 @@ export default function TenderBid({ tenderId }: { tenderId: string }) {
             updateSection(section.id, { body: start + words.slice(0, i).join(' ') });
             if (i >= words.length) {
                 stopDrafting();
-                saveVersion(section.id, 'Drafted by EBIS', 'EBIS');
+                saveVersion(section.id, 'Drafted by ProcurPilot', 'ProcurPilot');
             }
         }, 30);
     };
@@ -234,7 +234,7 @@ export default function TenderBid({ tenderId }: { tenderId: string }) {
                                     </Button>
                                 ) : (
                                     <Button size="sm" variant="ghost" onClick={draftWithEbis} disabled={!editable} className="text-primary">
-                                        <Sparkles className="size-4" /> {section.body.trim() ? 'Continue with EBIS' : 'Draft with EBIS'}
+                                        <Sparkles className="size-4" /> {section.body.trim() ? 'Continue with ProcurPilot' : 'Draft with ProcurPilot'}
                                     </Button>
                                 )}
                                 <Button size="sm" variant="ghost" onClick={() => setPanel('evidence')} className="hidden sm:inline-flex">
@@ -286,7 +286,7 @@ export default function TenderBid({ tenderId }: { tenderId: string }) {
                                         ...(section.status === 'not_started' && e.target.value.trim() ? { status: 'drafting' as const } : {}),
                                     });
                                 }}
-                                placeholder="Start writing, or let EBIS draft this section from the tender clauses and your evidence."
+                                placeholder="Start writing, or let ProcurPilot draft this section from the tender clauses and your evidence."
                                 className="placeholder:text-muted-foreground/70 block min-h-[360px] w-full resize-none bg-transparent px-5 py-5 text-[15px] leading-7 outline-none sm:px-8 sm:py-7"
                             />
                             {!section.body.trim() && !drafting && editable && (
@@ -296,7 +296,7 @@ export default function TenderBid({ tenderId }: { tenderId: string }) {
                                         onClick={draftWithEbis}
                                         className="pointer-events-auto rounded-full shadow-[0_10px_28px_-12px_var(--glow)]"
                                     >
-                                        <Sparkles className="size-4" /> Draft this section with EBIS
+                                        <Sparkles className="size-4" /> Draft this section with ProcurPilot
                                     </Button>
                                 </div>
                             )}
@@ -380,7 +380,7 @@ export default function TenderBid({ tenderId }: { tenderId: string }) {
                                     <div className="flex flex-col items-center gap-2 py-8 text-center">
                                         <ShieldCheck className="text-status-met size-8" />
                                         <p className="text-sm font-medium">No claim problems</p>
-                                        <p className="text-muted-foreground text-xs">Every claim EBIS checked is backed by your evidence.</p>
+                                        <p className="text-muted-foreground text-xs">Every claim ProcurPilot checked is backed by your evidence.</p>
                                     </div>
                                 ))}
 
@@ -471,7 +471,7 @@ function VersionHistory({
     if (!versions.length)
         return (
             <p className="text-muted-foreground py-6 text-center text-sm">
-                No saved versions yet. EBIS keeps one every time you leave the editor, change the status or draft with EBIS.
+                No saved versions yet. ProcurPilot keeps one every time you leave the editor, change the status or draft with ProcurPilot.
             </p>
         );
     return (

@@ -137,7 +137,7 @@ export default function OnboardingEvidence() {
                             Add the documents tenders always ask for
                         </h1>
                         <p className="text-muted-foreground max-w-2xl text-pretty">
-                            Upload them once. EBIS reads each one, checks every tender against them, and warns you before anything expires. You can
+                            Upload them once. ProcurPilot reads each one, checks every tender against them, and warns you before anything expires. You can
                             add more at any time.
                         </p>
                     </div>
@@ -167,7 +167,7 @@ export default function OnboardingEvidence() {
                             </span>
                             <span className="text-lg font-semibold">Drop everything at once</span>
                             <span className="text-muted-foreground max-w-md text-sm">
-                                Certificates, insurance schedules, accounts, case studies, CVs. EBIS sorts them and reads the key details. PDF, Word
+                                Certificates, insurance schedules, accounts, case studies, CVs. ProcurPilot sorts them and reads the key details. PDF, Word
                                 or images, up to 25 MB each.
                             </span>
                         </button>
@@ -198,7 +198,7 @@ export default function OnboardingEvidence() {
                             <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
                                 <div>
                                     <h2 id="review-title" className="flex items-center gap-2 font-semibold tracking-tight">
-                                        <ScanText className="text-primary size-4" /> Check what EBIS found
+                                        <ScanText className="text-primary size-4" /> Check what ProcurPilot found
                                     </h2>
                                     <p className="text-muted-foreground text-xs">Nothing is saved until you confirm it.</p>
                                 </div>
@@ -285,7 +285,7 @@ export default function OnboardingEvidence() {
                             <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:px-5">
                                 <p className="text-muted-foreground flex-1 text-xs leading-relaxed">
                                     Accreditations, awards, trade memberships, test or validation reports, quality manuals, licences. Name it and
-                                    choose a category, and EBIS will use it when a tender asks for it.
+                                    choose a category, and ProcurPilot will use it when a tender asks for it.
                                 </p>
                                 <Button size="sm" variant="outline" onClick={() => otherInput.current?.click()} className="shrink-0">
                                     <Plus className="size-4" /> Add a document
@@ -323,7 +323,7 @@ export default function OnboardingEvidence() {
                                 <Sparkles className="text-primary size-4" /> {unlocks} common requirement{unlocks === 1 ? '' : 's'} covered
                             </p>
                             <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                                Without a document, EBIS marks a requirement “Unknown” rather than guess. Each upload turns more of them into a clear
+                                Without a document, ProcurPilot marks a requirement “Unknown” rather than guess. Each upload turns more of them into a clear
                                 answer.
                             </p>
                         </div>
@@ -411,7 +411,7 @@ function ReviewRow({
                                 ? `Looks like: ${slot.title}`
                                 : other
                                   ? 'Your own document'
-                                  : 'Not one EBIS recognises. Choose a type, or “Something else”'}{' '}
+                                  : 'Not one ProcurPilot recognises. Choose a type, or “Something else”'}{' '}
                         · {formatBytes(item.size)}
                     </p>
                 </div>
@@ -492,7 +492,7 @@ function ReviewRow({
                                 <Input type="date" value={item.expiresAt} onChange={(e) => onChange({ expiresAt: e.target.value })} className="h-9" />
                             </label>
                             <label className="space-y-1 sm:col-span-2">
-                                <span className="text-muted-foreground text-xs">{other ? 'What it shows (optional)' : 'Key detail EBIS found'}</span>
+                                <span className="text-muted-foreground text-xs">{other ? 'What it shows (optional)' : 'Key detail ProcurPilot found'}</span>
                                 <Input value={item.fact} onChange={(e) => onChange({ fact: e.target.value })} className="h-9" />
                             </label>
                         </>

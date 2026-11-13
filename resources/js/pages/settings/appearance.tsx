@@ -52,7 +52,7 @@ export default function AppearancePage() {
             <Head title="Appearance" />
 
             <SettingsLayout>
-                <SettingsCard title="Theme" description="Choose how REA-NEP eProcurement looks on this device. Saved straight away.">
+                <SettingsCard title="Theme" description="Choose how ProcurPilot looks on this device. Saved straight away.">
                     <div className="grid gap-4 sm:grid-cols-3" role="radiogroup" aria-label="Theme">
                         {options.map((o) => {
                             const active = appearance === o.value;

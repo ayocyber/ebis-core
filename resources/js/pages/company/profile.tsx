@@ -432,7 +432,7 @@ export default function CompanyProfilePage() {
                             </ul>
                         )}
                         <p className="text-muted-foreground bg-muted/50 mt-4 rounded-lg p-3 text-xs leading-relaxed">
-                            Social value is usually worth at least 10% of the score in UK public tenders. EBIS uses these commitments as a starting
+                            Social value is usually worth at least 10% of the score in UK public tenders. ProcurPilot uses these commitments as a starting
                             point and tailors them to each buyer.
                         </p>
                     </Card>

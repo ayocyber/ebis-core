@@ -1,6 +1,5 @@
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
-import { PoweredByEbis } from '@/components/powered-by-ebis';
 import { TenantSwitcher } from '@/components/tenant-switcher';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
@@ -51,7 +50,6 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <PoweredByEbis className="group-data-[collapsible=icon]:hidden" />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

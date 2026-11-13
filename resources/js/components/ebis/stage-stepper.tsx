@@ -4,7 +4,7 @@ import type { TenderStage } from '@/types/ebis';
 import { Check } from 'lucide-react';
 
 /**
- * Horizontal progress through the 10-stage EBIS workflow.
+ * Horizontal progress through the 10-stage ProcurPilot workflow.
  * Scrolls sideways on small screens instead of wrapping.
  */
 export function StageStepper({ current, viewing }: { current: TenderStage; viewing?: TenderStage }) {

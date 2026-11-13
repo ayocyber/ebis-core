@@ -117,7 +117,7 @@ export function bidSectionsFor(tenderId: string): BidSection[] {
 }
 
 /**
- * Canned "Draft with EBIS" output for the preview. The real engine will
+ * Canned "Draft with ProcurPilot" output for the preview. The real engine will
  * write from the tender clauses and the company's evidence vault.
  */
 const drafts: Record<string, string> = {

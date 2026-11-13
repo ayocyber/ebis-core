@@ -33,7 +33,7 @@ export function ProductShot() {
                         <span className="size-2.5 rounded-full bg-[#febc2e]" />
                         <span className="size-2.5 rounded-full bg-[#28c840]" />
                         <div className="bg-background text-muted-foreground mx-auto hidden h-6 w-72 items-center justify-center gap-1.5 rounded-md border text-[11px] sm:flex">
-                            <Search className="size-3" /> REA-NEP eProcurement · Tenders · NCC/ICT/2026/014
+                            <Search className="size-3" /> ProcurPilot · Tenders · NCC/ICT/2026/014
                         </div>
                     </div>
 

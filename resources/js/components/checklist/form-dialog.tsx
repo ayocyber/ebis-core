@@ -8,7 +8,7 @@ import { Download, FileCheck2, PenLine, Sparkles, Trash2, UploadCloud } from 'lu
 import { useRef, useState } from 'react';
 
 /**
- * Fill in a buyer form (BID-06). EBIS pre-fills what it knows from the profile;
+ * Fill in a buyer form (BID-06). ProcurPilot pre-fills what it knows from the profile;
  * the user completes the rest and, where a signature is needed, uploads the signed copy.
  */
 export function FormDialog({
@@ -73,7 +73,7 @@ function FormBody({
             {prefilled > 0 && (
                 <p className="bg-primary/5 text-foreground flex items-center gap-2 rounded-lg px-3 py-2 text-xs">
                     <Sparkles className="text-primary size-3.5 shrink-0" />
-                    EBIS filled in {prefilled} of {fields.length} fields from your company profile. Check them before you sign.
+                    ProcurPilot filled in {prefilled} of {fields.length} fields from your company profile. Check them before you sign.
                 </p>
             )}
 

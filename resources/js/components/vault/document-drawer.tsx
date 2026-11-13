@@ -119,7 +119,7 @@ function Body({ doc, canEdit, onReplace, onDeleted }: { doc: VaultDocument; canE
                 {facts.length > 0 && (
                     <section>
                         <h3 className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wide uppercase">
-                            <ScanText className="size-3.5" /> What EBIS read from it
+                            <ScanText className="size-3.5" /> What ProcurPilot read from it
                         </h3>
                         <ul className="mt-2 space-y-2">
                             {facts.map((f) => (

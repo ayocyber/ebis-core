@@ -66,7 +66,7 @@ export default function CompanySettings({ company, canManage }: Props) {
                     <span className="min-w-0 flex-1">
                         <span className="block font-medium">Company profile</span>
                         <span className="text-muted-foreground block text-sm">
-                            Companies House and VAT numbers, turnover, insurance, certifications and people. EBIS checks tenders against these.
+                            Companies House and VAT numbers, turnover, insurance, certifications and people. ProcurPilot checks tenders against these.
                         </span>
                     </span>
                     <ArrowRight className="text-muted-foreground group-hover:text-primary size-4 shrink-0 transition-all group-hover:translate-x-0.5" />

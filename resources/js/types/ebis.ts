@@ -1,5 +1,5 @@
 /**
- * REA-NEP eProcurement domain types.
+ * ProcurPilot domain types.
  *
  * These mirror the shape the Laravel API/Inertia props will eventually send.
  * Dates are ISO-8601 strings; money is minor-unit free (whole currency units).
@@ -16,7 +16,7 @@ export interface Money {
     currency: 'GBP' | 'EUR' | 'USD';
 }
 
-/** The ten workflow stages from the REA-NEP eProcurement spec. */
+/** The ten workflow stages from the ProcurPilot spec. */
 export type TenderStage =
     | 'intake' // 1. upload / import
     | 'extraction' // 2. parse documents & metadata
@@ -332,7 +332,7 @@ export interface CompanyProfile {
 /* ------------------------------------------------------------------ */
 
 /**
- * form     — a buyer form EBIS can pre-fill from the profile (BID-06)
+ * form     — a buyer form ProcurPilot can pre-fill from the profile (BID-06)
  * company  — a standing document that comes from the evidence vault
  * bid      — a file that belongs to this tender only
  * response — the written answers, built in the bid editor
@@ -342,7 +342,7 @@ export type ChecklistKind = 'form' | 'company' | 'bid' | 'response';
 export interface ChecklistField {
     id: string;
     label: string;
-    /** Value EBIS pre-fills from the company profile */
+    /** Value ProcurPilot pre-fills from the company profile */
     prefill?: string;
     /** Where the pre-fill came from, shown to the user */
     from?: string;

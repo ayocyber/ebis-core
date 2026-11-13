@@ -13,7 +13,7 @@ services:
     envVars:
       # App
       - key: APP_NAME
-        value: REA-NEP eProcurement
+        value: ProcurPilot
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
@@ -71,7 +71,7 @@ services:
       - key: MAIL_FROM_ADDRESS
         value: no-reply@procurpilot.test
       - key: MAIL_FROM_NAME
-        value: REA-NEP eProcurement
+        value: ProcurPilot
 
       # Demo company for testers
       - key: DEMO_SEED

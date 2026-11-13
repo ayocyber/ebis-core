@@ -24,7 +24,7 @@ function expiringDoc(Tenant $tenant, int $days, array $state = []): VaultDocumen
     return app(CurrentTenant::class)->runAs($tenant, fn () => VaultDocument::factory()->expiresInDays($days)->create($state));
 }
 
-it('emails owners and editors at 90 days, once, and logs it as EBIS', function () {
+it('emails owners and editors at 90 days, once, and logs it as ProcurPilot', function () {
     expiringDoc($this->tenant, 85, ['title' => 'ISO 9001']);
 
     $this->artisan('vault:expiry-alerts')->assertSuccessful();
@@ -35,7 +35,7 @@ it('emails owners and editors at 90 days, once, and logs it as EBIS', function (
     Notification::assertSentTimes(DocumentExpiring::class, 2);
 
     $event = app(CurrentTenant::class)->runAs($this->tenant, fn () => AuditEvent::sole());
-    expect($event->actor_name)->toBe('EBIS')
+    expect($event->actor_name)->toBe('ProcurPilot')
         ->and($event->action)->toBe('sent a 90-day renewal reminder for')
         ->and($event->target)->toBe('ISO 9001');
 });

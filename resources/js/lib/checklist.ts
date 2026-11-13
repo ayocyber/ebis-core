@@ -44,7 +44,7 @@ export const checklistStatusMeta: Record<ChecklistStatus, { label: string; icon:
 export const checklistStatusOrder: ChecklistStatus[] = ['problem', 'missing', 'in_progress', 'ready', 'not_applicable'];
 
 export const checklistKindMeta: Record<ChecklistKind, { label: string; hint: string }> = {
-    form: { label: 'Forms to complete', hint: 'EBIS fills in what it already knows. You add the rest and sign.' },
+    form: { label: 'Forms to complete', hint: 'ProcurPilot fills in what it already knows. You add the rest and sign.' },
     bid: { label: 'Files for this bid', hint: 'Prepared for this tender only. Not saved to your vault.' },
     company: { label: 'From your evidence vault', hint: 'Attached automatically. Renew in the vault and every bid updates.' },
     response: { label: 'Your written response', hint: 'Built in the bid editor.' },
@@ -159,17 +159,17 @@ export function resolveChecklist(
                         ...base,
                         filled,
                         status: touched ? 'in_progress' : 'missing',
-                        note: `${done} of ${fields.length} fields filled${done && !touched ? ' by EBIS' : ''}`,
+                        note: `${done} of ${fields.length} fields filled${done && !touched ? ' by ProcurPilot' : ''}`,
                         issue: `Fill in the ${fields.length - done} remaining field${fields.length - done > 1 ? 's' : ''}.`,
                     };
                 }
                 if (!touched) {
-                    // EBIS filled every field, but a person has to check it before it counts.
+                    // ProcurPilot filled every field, but a person has to check it before it counts.
                     return {
                         ...base,
                         filled,
                         status: 'in_progress',
-                        note: 'Filled in by EBIS · not checked yet',
+                        note: 'Filled in by ProcurPilot · not checked yet',
                         issue: 'Open it, check the details and save.',
                     };
                 }

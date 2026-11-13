@@ -138,7 +138,7 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
                 <DialogDescription className="mt-1">
                     {fixed.length
                         ? `${fixed.length} requirement${fixed.length > 1 ? 's' : ''} now ${fixed.length > 1 ? 'have' : 'has'} the evidence ${fixed.length > 1 ? 'they need' : 'it needs'}. The matching gaps are closed.`
-                        : 'EBIS will use it the next time a tender asks for it.'}
+                        : 'ProcurPilot will use it the next time a tender asks for it.'}
                 </DialogDescription>
                 {fixed.length > 0 && (
                     <ul className="mt-5 divide-y rounded-xl border text-left">
@@ -189,7 +189,7 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
                           ? `Closes ${target.gap.code} and is saved to your vault, so future tenders find it too.`
                           : base
                             ? 'The old version is archived. Tenders using it switch to the new one.'
-                            : 'EBIS reads the document and fills in the details for you.'}
+                            : 'ProcurPilot reads the document and fills in the details for you.'}
                 </DialogDescription>
             </DialogHeader>
 
@@ -262,7 +262,7 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
                         <FileUp className="text-primary size-5 shrink-0" />
                         <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium">{file.name}</p>
-                            <p className="text-muted-foreground text-xs">{formatBytes(file.size)} · details read by EBIS, check them below</p>
+                            <p className="text-muted-foreground text-xs">{formatBytes(file.size)} · details read by ProcurPilot, check them below</p>
                         </div>
                         <button type="button" onClick={() => setStep('pick')} className="text-primary text-xs font-medium hover:underline">
                             Change

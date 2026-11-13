@@ -62,7 +62,7 @@ export default function Vault() {
                             <FolderLock className="text-primary size-6" /> Evidence vault
                         </h1>
                         <p className="text-muted-foreground max-w-xl text-sm">
-                            Every certificate, policy and case study EBIS uses to check eligibility and back up claims in your bids.
+                            Every certificate, policy and case study ProcurPilot uses to check eligibility and back up claims in your bids.
                         </p>
                     </div>
                     <div className="flex gap-2">
@@ -85,7 +85,7 @@ export default function Vault() {
                                 {stats.blocking.length} expired document{stats.blocking.length > 1 ? 's are' : ' is'} hurting live bids
                             </p>
                             <p className="text-muted-foreground">
-                                {stats.blocking.map((s) => s.d.title).join(', ')}. Upload the renewal and EBIS re-checks every tender that uses it.
+                                {stats.blocking.map((s) => s.d.title).join(', ')}. Upload the renewal and ProcurPilot re-checks every tender that uses it.
                             </p>
                         </div>
                         <Button size="sm" variant="outline" onClick={() => openDoc(stats.blocking[0].d.id)}>
