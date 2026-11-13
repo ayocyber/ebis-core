@@ -29,7 +29,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'tenant'])->group(function () {
     Route::get('onboarding', [OnboardingController::class, 'create'])->name('onboarding.create');
     Route::post('onboarding', [OnboardingController::class, 'store'])->name('onboarding.store');
-    // Step 2 of setup: upload the documents tenders always ask for (frontend preview).
+    // Step 2 of setup: upload the documents tenders always ask for, straight into the vault.
     Route::get('onboarding/evidence', function () {
         return Inertia::render('onboarding/evidence');
     })->name('onboarding.evidence');

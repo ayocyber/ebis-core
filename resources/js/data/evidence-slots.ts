@@ -2,8 +2,9 @@
  * The documents UK public tenders ask for most often, used to guide a new
  * company through setting up its vault at registration.
  *
- * `suggest` stands in for the extraction engine (PRF-04): it returns what ProcurPilot
- * would read from the file. Nothing is saved until the user confirms it.
+ * `suggest` holds examples shown as placeholders during setup. Nothing is pre-filled
+ * from it except issuers that are always the same; the user copies dates and cover
+ * from the document itself, and nothing is saved until they confirm it (PRF-04).
  */
 import type { VaultCategory } from '@/types/ebis';
 

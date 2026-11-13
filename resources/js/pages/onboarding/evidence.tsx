@@ -8,7 +8,7 @@ import { formatBytes } from '@/lib/ebis';
 import { cn } from '@/lib/utils';
 import { vaultCategoryMeta, vaultCategoryOrder } from '@/lib/vault';
 import { type SharedData } from '@/types';
-import type { VaultCategory } from '@/types/ebis';
+import type { VaultCategory, VaultDocument } from '@/types/ebis';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowRight, Check, CheckCircle2, CircleSlash, FileUp, Loader2, Plus, ScanText, Sparkles, Trash2, UploadCloud } from 'lucide-react';
 import { useRef, useState } from 'react';
@@ -22,7 +22,7 @@ interface Item {
     file: File;
     fileName: string;
     size: number;
-    phase: 'reading' | 'review' | 'saving' | 'added';
+    phase: 'review' | 'saving';
     error?: string;
     issuer: string;
     reference: string;
@@ -47,15 +47,44 @@ const prettyName = (file: string) =>
 const canConfirm = (i: Item) =>
     i.phase === 'review' && (i.slotId === OTHER ? !!i.customTitle.trim() && !!i.customCategory : evidenceSlots.some((s) => s.id === i.slotId));
 
-const iso = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+/** Issuers that are always the same in the UK, so they can be filled in safely. */
+const FIXED_ISSUER: Record<string, string> = { incorp: 'Companies House', cep: 'IASME Consortium' };
 
+/**
+ * Starting values for a document's details. Nothing is guessed: dates, cover and
+ * references must come from the document itself, so they start empty and the
+ * slot's examples are only shown as placeholders.
+ */
 function suggestionFor(slot: EvidenceSlot | undefined) {
+    return { issuer: (slot && FIXED_ISSUER[slot.id]) ?? '', reference: '', expiresAt: '', fact: '' };
+}
+
+/** Example text for the empty fields, e.g. "e.g. Cover: £10m any one occurrence". */
+function placeholdersFor(slot: EvidenceSlot | undefined) {
     const s = slot?.suggest ?? {};
-    return { issuer: s.issuer ?? '', reference: s.reference ?? '', expiresAt: s.expiresInDays ? iso(s.expiresInDays) : '', fact: s.fact ?? '' };
+    return {
+        issuer: s.issuer && s.issuer !== 'Your insurer' ? `e.g. ${s.issuer}` : 'e.g. your insurer or certification body',
+        fact: s.fact ? `e.g. ${s.fact}` : 'Optional',
+        /** The document normally has an expiry date. */
+        expires: s.expiresInDays !== undefined,
+    };
+}
+
+const singleTitles = new Set(evidenceSlots.filter((s) => !s.multiple).map((s) => s.title.toLowerCase()));
+
+/**
+ * Vault documents that fill a slot. One-off documents are saved under the slot's
+ * title; repeatable ones (ISO certificates, case studies, CVs) by their category.
+ */
+function vaultMatches(slot: EvidenceSlot, docs: VaultDocument[]): VaultDocument[] {
+    return slot.multiple
+        ? docs.filter((d) => d.category === slot.category && !singleTitles.has(d.title.toLowerCase()))
+        : docs.filter((d) => d.title.toLowerCase() === slot.title.toLowerCase());
 }
 
 export default function OnboardingEvidence() {
-    const { tenant } = usePage<SharedData>().props;
+    const { tenant, vault } = usePage<SharedData>().props;
+    const vaultDocs = vault?.documents ?? [];
     const companyName = (tenant as { name?: string } | null)?.name ?? 'your company';
     const [items, setItems] = useState<Item[]>([]);
     const [notHeld, setNotHeld] = useState<string[]>([]);
@@ -81,7 +110,7 @@ export default function OnboardingEvidence() {
                 file: f,
                 fileName: f.name,
                 size: f.size,
-                phase: 'reading',
+                phase: 'review',
                 ...suggestionFor(slot),
                 customTitle: forcedSlot === OTHER ? prettyName(f.name) : '',
             });
@@ -90,8 +119,6 @@ export default function OnboardingEvidence() {
         if (!added.length) return;
         setItems((list) => [...list, ...added]);
         if (forcedSlot) setNotHeld((n) => n.filter((x) => x !== forcedSlot));
-        // Simulated extraction; the real engine reads issuer, numbers and dates.
-        added.forEach((it, i) => window.setTimeout(() => update(it.id, { phase: 'review' }), 1100 + i * 350));
     };
 
     const confirm = (item: Item) => {
@@ -107,14 +134,20 @@ export default function OnboardingEvidence() {
             expiresAt: item.expiresAt || undefined,
             summary: item.fact || (slot ? slot.why : 'Added during setup.'),
         })
-            .then(() => update(item.id, { phase: 'added' }))
+            // Once saved it is in the vault prop, which drives the checklist below.
+            .then(() => setItems((list) => list.filter((i) => i.id !== item.id)))
             .catch((errors) => update(item.id, { phase: 'review', error: firstError(errors) }));
     };
 
-    const pending = items.filter((i) => i.phase !== 'added');
-    const others = items.filter((i) => i.slotId === OTHER && i.phase === 'added');
+    const pending = items;
     const otherInput = useRef<HTMLInputElement>(null);
-    const addedFor = (slotId: string) => items.filter((i) => i.slotId === slotId && i.phase === 'added');
+    // From the real vault, so progress survives a refresh or coming back later.
+    const addedFor = (slotId: string) => {
+        const slot = evidenceSlots.find((s) => s.id === slotId);
+        return slot ? vaultMatches(slot, vaultDocs) : [];
+    };
+    const matched = new Set(evidenceSlots.flatMap((s) => vaultMatches(s, vaultDocs).map((d) => d.id)));
+    const others = vaultDocs.filter((d) => !matched.has(d.id));
 
     const weight = (s: EvidenceSlot) => (s.tier === 'essential' ? 2 : 1);
     const total = evidenceSlots.reduce((t, s) => t + weight(s), 0);
@@ -137,8 +170,8 @@ export default function OnboardingEvidence() {
                             Add the documents tenders always ask for
                         </h1>
                         <p className="text-muted-foreground max-w-2xl text-pretty">
-                            Upload them once. ProcurPilot reads each one, checks every tender against them, and warns you before anything expires. You can
-                            add more at any time.
+                            Upload them once. ProcurPilot keeps them in your vault, checks tenders against them, and warns you before anything
+                            expires. You can add more at any time.
                         </p>
                     </div>
 
@@ -167,8 +200,8 @@ export default function OnboardingEvidence() {
                             </span>
                             <span className="text-lg font-semibold">Drop everything at once</span>
                             <span className="text-muted-foreground max-w-md text-sm">
-                                Certificates, insurance schedules, accounts, case studies, CVs. ProcurPilot sorts them and reads the key details. PDF, Word
-                                or images, up to 25 MB each.
+                                Certificates, insurance schedules, accounts, case studies, CVs. ProcurPilot sorts them by file name; you add the key
+                                details. PDF, Word or images, up to 25 MB each.
                             </span>
                         </button>
                         <input
@@ -198,9 +231,11 @@ export default function OnboardingEvidence() {
                             <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
                                 <div>
                                     <h2 id="review-title" className="flex items-center gap-2 font-semibold tracking-tight">
-                                        <ScanText className="text-primary size-4" /> Check what ProcurPilot found
+                                        <ScanText className="text-primary size-4" /> Add the details
                                     </h2>
-                                    <p className="text-muted-foreground text-xs">Nothing is saved until you confirm it.</p>
+                                    <p className="text-muted-foreground text-xs">
+                                        Copy them from each document, especially expiry dates. Nothing is saved until you confirm it.
+                                    </p>
                                 </div>
                                 {pending.filter(canConfirm).length > 1 && (
                                     <Button size="sm" variant="outline" onClick={() => pending.filter(canConfirm).forEach(confirm)}>
@@ -241,7 +276,7 @@ export default function OnboardingEvidence() {
                                             key={slot.id}
                                             slot={slot}
                                             added={addedFor(slot.id)}
-                                            reading={items.some((i) => i.slotId === slot.id && i.phase !== 'added')}
+                                            reading={items.some((i) => i.slotId === slot.id)}
                                             notHeld={notHeld.includes(slot.id)}
                                             onFiles={(files) => addFiles(files, slot.id)}
                                             onToggleNotHeld={() =>
@@ -265,16 +300,16 @@ export default function OnboardingEvidence() {
                             {others.length > 0 && (
                                 <ul className="divide-y border-b">
                                     {others.map((o) => {
-                                        const Icon = vaultCategoryMeta[o.customCategory ?? 'company'].icon;
+                                        const Icon = vaultCategoryMeta[o.category].icon;
                                         return (
                                             <li key={o.id} className="bg-status-met/[0.04] flex items-center gap-3 px-4 py-3 sm:px-5">
                                                 <span className="bg-status-met/15 text-status-met flex size-10 shrink-0 items-center justify-center rounded-xl">
                                                     <Icon className="size-5" />
                                                 </span>
                                                 <div className="min-w-0">
-                                                    <p className="truncate font-medium">{o.customTitle}</p>
+                                                    <p className="truncate font-medium">{o.title}</p>
                                                     <p className="text-muted-foreground truncate text-xs">
-                                                        {vaultCategoryMeta[o.customCategory ?? 'company'].label} · {o.fileName}
+                                                        {vaultCategoryMeta[o.category].label} · {o.fileName}
                                                     </p>
                                                 </div>
                                             </li>
@@ -323,8 +358,8 @@ export default function OnboardingEvidence() {
                                 <Sparkles className="text-primary size-4" /> {unlocks} common requirement{unlocks === 1 ? '' : 's'} covered
                             </p>
                             <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                                Without a document, ProcurPilot marks a requirement “Unknown” rather than guess. Each upload turns more of them into a clear
-                                answer.
+                                Without a document, ProcurPilot marks a requirement “Unknown” rather than guess. Each upload turns more of them into a
+                                clear answer.
                             </p>
                         </div>
 
@@ -390,28 +425,23 @@ function ReviewRow({
 }) {
     const slot = evidenceSlots.find((s) => s.id === item.slotId);
     const other = item.slotId === OTHER;
+    const hints = placeholdersFor(slot);
     return (
         <li className="animate-fade-up space-y-3 px-5 py-4">
             <div className="flex items-center gap-3">
                 <span className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-lg">
-                    {item.phase === 'reading' || item.phase === 'saving' ? (
-                        <Loader2 className="text-primary size-4 animate-spin" />
-                    ) : (
-                        <FileUp className="text-primary size-4" />
-                    )}
+                    {item.phase === 'saving' ? <Loader2 className="text-primary size-4 animate-spin" /> : <FileUp className="text-primary size-4" />}
                 </span>
                 <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{item.fileName}</p>
                     <p className="text-muted-foreground text-xs">
-                        {item.phase === 'reading'
-                            ? 'Reading…'
-                            : item.phase === 'saving'
-                              ? 'Saving to your vault…'
-                              : slot
-                                ? `Looks like: ${slot.title}`
-                                : other
-                                  ? 'Your own document'
-                                  : 'Not one ProcurPilot recognises. Choose a type, or “Something else”'}{' '}
+                        {item.phase === 'saving'
+                            ? 'Saving to your vault…'
+                            : slot
+                              ? `Looks like: ${slot.title}`
+                              : other
+                                ? 'Your own document'
+                                : 'Not one ProcurPilot recognises. Choose a type, or “Something else”'}{' '}
                         · {formatBytes(item.size)}
                     </p>
                 </div>
@@ -485,15 +515,35 @@ function ReviewRow({
                         <>
                             <label className="space-y-1">
                                 <span className="text-muted-foreground text-xs">Issued by</span>
-                                <Input value={item.issuer} onChange={(e) => onChange({ issuer: e.target.value })} className="h-9" />
+                                <Input
+                                    value={item.issuer}
+                                    onChange={(e) => onChange({ issuer: e.target.value })}
+                                    placeholder={hints.issuer}
+                                    className="h-9"
+                                />
                             </label>
                             <label className="space-y-1">
-                                <span className="text-muted-foreground text-xs">Expires</span>
-                                <Input type="date" value={item.expiresAt} onChange={(e) => onChange({ expiresAt: e.target.value })} className="h-9" />
+                                <span className="text-muted-foreground text-xs">Expires{hints.expires ? '' : ' (if it does)'}</span>
+                                <Input
+                                    type="date"
+                                    value={item.expiresAt}
+                                    onChange={(e) => onChange({ expiresAt: e.target.value })}
+                                    className={cn('h-9', hints.expires && !item.expiresAt && 'border-status-partial')}
+                                />
+                                {hints.expires && !item.expiresAt && (
+                                    <span className="text-status-partial block text-[11px]">
+                                        Add the date from the document so we can remind you to renew.
+                                    </span>
+                                )}
                             </label>
                             <label className="space-y-1 sm:col-span-2">
-                                <span className="text-muted-foreground text-xs">{other ? 'What it shows (optional)' : 'Key detail ProcurPilot found'}</span>
-                                <Input value={item.fact} onChange={(e) => onChange({ fact: e.target.value })} className="h-9" />
+                                <span className="text-muted-foreground text-xs">{other ? 'What it shows (optional)' : 'Key detail (optional)'}</span>
+                                <Input
+                                    value={item.fact}
+                                    onChange={(e) => onChange({ fact: e.target.value })}
+                                    placeholder={hints.fact}
+                                    className="h-9"
+                                />
                             </label>
                         </>
                     )}
@@ -522,7 +572,7 @@ function SlotRow({
     onToggleNotHeld,
 }: {
     slot: EvidenceSlot;
-    added: Item[];
+    added: VaultDocument[];
     reading: boolean;
     notHeld: boolean;
     onFiles: (files: FileList) => void;
@@ -561,7 +611,7 @@ function SlotRow({
             <div className="flex shrink-0 items-center gap-2 pl-[52px] sm:pl-0">
                 {reading ? (
                     <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
-                        <Loader2 className="size-3.5 animate-spin" /> Reading
+                        <Loader2 className="size-3.5 animate-spin" /> Details needed above
                     </span>
                 ) : (
                     <>
