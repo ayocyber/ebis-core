@@ -25,7 +25,10 @@ export default function Dashboard({
 }: {
     tenders: Tender[];
     /** Each tender's latest eligibility rows and decision, from the server */
-    workspaces: Record<string, { rows: EligibilityRow[]; decision: GoNoGoDecision | null }>;
+    workspaces: Record<
+        string,
+        { rows: EligibilityRow[]; decision: GoNoGoDecision | null; readiness: number | null; signedOff: { by: string; at: string } | null }
+    >;
 }) {
     const { tenant, role, auth } = usePage<SharedData>().props;
     const now = useMemo(() => new Date(), []);
@@ -38,7 +41,14 @@ export default function Dashboard({
             Object.fromEntries(
                 live.map((t) => [
                     t.id,
-                    { rows: workspaces[t.id]?.rows ?? [], decision: workspaces[t.id]?.decision ?? undefined, sections: [], checklist: {} },
+                    {
+                        rows: workspaces[t.id]?.rows ?? [],
+                        decision: workspaces[t.id]?.decision ?? undefined,
+                        readiness: workspaces[t.id]?.readiness ?? null,
+                        signedOff: workspaces[t.id]?.signedOff ?? undefined,
+                        sections: [],
+                        checklist: {},
+                    },
                 ]),
             ),
         [live, workspaces],
@@ -369,6 +379,7 @@ function bidStatus(t: Tender, view: WorkspaceView, documents: VaultDocument[]): 
     if (view.signedOff) return { label: 'Signed off', tone: 'good' };
     if (isDrafting(t)) {
         const score = tenderReadiness(view, t, documents);
+        if (score === undefined) return { label: 'Readiness not checked yet', tone: 'neutral' };
         return { label: `${score}% ready`, value: score, tone: score >= 80 ? 'good' : score >= 50 ? 'warn' : 'bad' };
     }
     if (isAssessed(t)) {

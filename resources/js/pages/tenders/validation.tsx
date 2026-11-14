@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { findTender } from '@/data/mock-ebis';
-import { submissionRules } from '@/data/mock-requirements';
+import { type SubmissionRule, submissionRules } from '@/data/mock-requirements';
 import { useChecklist } from '@/hooks/use-checklist';
 import type { ScoreRun } from '@/hooks/use-tender-workspace';
 import AppLayout from '@/layouts/app-layout';
@@ -15,6 +15,7 @@ import { type FixTarget, type Priority, priorityMeta, priorityOrder, readinessIs
 import { isOwner } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
+import type { BidSection, EligibilityRow, GoNoGoDecision, Tender } from '@/types/ebis';
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
     ArrowDownRight,
@@ -49,23 +50,75 @@ const fixRoute: Record<FixTarget, string> = {
     documents: 'tenders.documents',
 };
 
+/** Sample tenders: score history and sign-off live in the in-memory workspace. */
 export default function TenderValidation({ tenderId }: { tenderId: string }) {
-    const { role, auth, tenant } = usePage<SharedData>().props;
+    const { auth } = usePage<SharedData>().props;
     const tender = findTender(tenderId);
     const { rows, sections, decision, signedOff, setSignedOff, documents, scoreHistory, recordScore } = useChecklist(tenderId, tender);
+
+    if (!tender) return <TenderNotFound />;
+
+    return (
+        <ValidationScreen
+            tender={tender}
+            rows={rows}
+            sections={sections}
+            decision={decision}
+            documents={documents}
+            rules={submissionRules()}
+            scoreHistory={scoreHistory}
+            recordScore={recordScore}
+            signedOff={signedOff}
+            onSignOff={() => setSignedOff({ by: auth.user.name, at: new Date().toISOString() })}
+            onUndoSignOff={() => setSignedOff(undefined)}
+        />
+    );
+}
+
+/** Stages 9–10 (VAL-01…08): readiness score, issues, score history and sign-off. */
+export function ValidationScreen({
+    tender,
+    rows,
+    sections,
+    decision,
+    documents,
+    rules,
+    scoreHistory,
+    recordScore,
+    signedOff,
+    onSignOff,
+    onUndoSignOff,
+    signOffError,
+}: {
+    tender: Tender;
+    rows: EligibilityRow[];
+    sections: BidSection[];
+    decision?: GoNoGoDecision;
+    documents: ResolvedItem[];
+    /** The tender's submission rules (TUN-04); none for real tenders yet */
+    rules: SubmissionRule[];
+    scoreHistory: ScoreRun[];
+    /** Keep a result in the history; `manual` when someone pressed "check again" */
+    recordScore: (score: number, critical: number, manual?: boolean) => void;
+    signedOff?: { by: string; at: string };
+    onSignOff: () => void;
+    onUndoSignOff: () => void;
+    signOffError?: string;
+}) {
+    const { role, auth, tenant } = usePage<SharedData>().props;
     const [priority, setPriority] = useState<Priority | null>(null);
 
-    const issues = useMemo(() => readinessIssues(rows, sections, decision, documents), [rows, sections, decision, documents]);
+    const issues = useMemo(() => readinessIssues(rows, sections, decision, documents, rules), [rows, sections, decision, documents, rules]);
     const score = readinessScore(issues);
     const criticalCount = issues.filter((i) => i.priority === 'critical').length;
-    const ruleChecks = useMemo(() => checkRules(submissionRules(), sections, documents), [sections, documents]);
+    const ruleChecks = useMemo(() => checkRules(rules, sections, documents), [rules, sections, documents]);
     const contradictions = useMemo(() => findContradictions(sections), [sections]);
     const [rerunning, setRerunning] = useState(false);
 
     // VAL-07: every time the result changes, keep it in the history.
     useEffect(() => {
-        if (tender && !signedOff) recordScore(score, criticalCount);
-    }, [score, criticalCount, tender, signedOff, recordScore]);
+        if (!signedOff) recordScore(score, criticalCount);
+    }, [score, criticalCount, signedOff, recordScore]);
 
     const rerun = () => {
         setRerunning(true);
@@ -75,8 +128,6 @@ export default function TenderValidation({ tenderId }: { tenderId: string }) {
         }, 900);
     };
 
-    if (!tender) return <TenderNotFound />;
-
     const counts = Object.fromEntries(priorityOrder.map((p) => [p, issues.filter((i) => i.priority === p).length])) as Record<Priority, number>;
     const visible = priority ? issues.filter((i) => i.priority === priority) : issues;
     const companyName = (tenant as { name?: string } | null)?.name ?? 'your company';
@@ -85,11 +136,11 @@ export default function TenderValidation({ tenderId }: { tenderId: string }) {
         <AppLayout
             breadcrumbs={[
                 { title: 'Tenders', href: '/tenders' },
-                { title: tender.reference, href: `/tenders/${tender.id}/eligibility` },
+                { title: tender.reference || tender.title, href: `/tenders/${tender.id}/eligibility` },
                 { title: 'Readiness & sign-off', href: `/tenders/${tender.id}/validation` },
             ]}
         >
-            <Head title={`Readiness · ${tender.reference}`} />
+            <Head title={`Readiness · ${tender.reference || tender.title}`} />
 
             <div className="flex w-full flex-1 flex-col gap-6 p-4 sm:p-6 lg:px-8">
                 <TenderHeader
@@ -118,7 +169,7 @@ export default function TenderValidation({ tenderId }: { tenderId: string }) {
                         buyer={tender.buyer.name}
                         deadline={tender.deadline}
                         canUndo={isOwner(role)}
-                        onUndo={() => setSignedOff(undefined)}
+                        onUndo={onUndoSignOff}
                     />
                 ) : (
                     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
@@ -226,8 +277,13 @@ export default function TenderValidation({ tenderId }: { tenderId: string }) {
                                 owner={isOwner(role)}
                                 userName={auth.user.name}
                                 companyName={companyName}
-                                onSign={() => setSignedOff({ by: auth.user.name, at: new Date().toISOString() })}
+                                onSign={onSignOff}
                             />
+                            {signOffError && (
+                                <p role="alert" className="text-status-not-met text-sm">
+                                    {signOffError}
+                                </p>
+                            )}
                         </aside>
                     </div>
                 )}
@@ -606,9 +662,15 @@ function RulesPanel({ checks, tenderId }: { checks: RuleCheck[]; tenderId: strin
                     <p className="text-muted-foreground text-xs">Formats, sizes, page limits and file names the buyer asked for</p>
                 </div>
                 <span className={cn('text-sm tabular-nums', breaches ? 'text-status-not-met font-medium' : 'text-muted-foreground')}>
-                    {breaches ? `${breaches} broken` : 'All met'}
+                    {!checks.length ? 'Not checked' : breaches ? `${breaches} broken` : 'All met'}
                 </span>
             </div>
+            {!checks.length && (
+                <p className="text-muted-foreground px-5 py-4 text-sm sm:px-6">
+                    ProcurPilot doesn’t read submission rules from the tender pack yet. Check the buyer’s instructions yourself for page limits, file
+                    formats, sizes and file names before you submit.
+                </p>
+            )}
             <ul className="divide-y">
                 {checks.map(({ rule, breaches, note }) => (
                     <li key={rule.id} className="flex items-start gap-3 px-5 py-3 sm:px-6">

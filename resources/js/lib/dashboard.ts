@@ -40,7 +40,9 @@ export const isAssessed = (t: Tender) => stageIndex(t.stage) >= stageIndex('elig
 export const isDrafting = (t: Tender) => stageIndex(t.stage) >= stageIndex('drafting');
 
 /** Same score as the readiness page: gaps, decision, sections and the documents checklist. */
-export function tenderReadiness(view: WorkspaceView, tender: Tender, documents: VaultDocument[]): number {
+export function tenderReadiness(view: WorkspaceView, tender: Tender, documents: VaultDocument[]): number | undefined {
+    // Real tenders: the latest saved readiness check, or undefined before the first one.
+    if (view.readiness !== undefined) return view.readiness ?? undefined;
     const checklist = resolveChecklist(checklistFor(tender.id), view.checklist, { tender, supplier: '', documents, sections: view.sections });
     return readinessScore(readinessIssues(view.rows, view.sections, view.decision, checklist));
 }

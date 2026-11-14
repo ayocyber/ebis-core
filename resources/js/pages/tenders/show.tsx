@@ -320,6 +320,7 @@ function StageLinks({ tender }: { tender: Tender }) {
         { stage: 'compliance', label: 'Compliance matrix', route: 'tenders.compliance' },
         { stage: 'compliance', label: 'Write the bid', route: 'tenders.bid' },
         { stage: 'compliance', label: 'Documents checklist', route: 'tenders.documents' },
+        { stage: 'compliance', label: 'Readiness & sign-off', route: 'tenders.validation' },
     ];
     const reached = links.filter((l) => at >= stageIndex(l.stage));
 

@@ -302,6 +302,8 @@ export interface WorkspaceView {
     decision?: GoNoGoDecision;
     signedOff?: WorkspaceState['signedOff'];
     checklist: Record<string, ChecklistProgress>;
+    /** Real tenders: latest saved readiness score, null before the first check. Sample tenders work it out instead. */
+    readiness?: number | null;
 }
 
 /** Read-only view of several tenders at once (dashboard). Re-renders on any change. */

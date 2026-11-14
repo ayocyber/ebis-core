@@ -39,6 +39,8 @@ use Illuminate\Support\Str;
  * @property TenderStage $stage
  * @property int $version
  * @property int|null $created_by
+ * @property Carbon|null $signed_off_at
+ * @property int|null $signed_off_by
  * @property Carbon $created_at
  * @property-read Collection<int, TenderDocument> $documents
  * @property-read User|null $creator
@@ -51,7 +53,7 @@ class Tender extends Model
     protected $fillable = [
         'title', 'reference', 'summary', 'buyer_name', 'buyer_type', 'buyer_location', 'sector',
         'published_at', 'clarification_deadline', 'deadline', 'estimated_value', 'currency', 'lots',
-        'stage', 'version', 'created_by',
+        'stage', 'version', 'created_by', 'signed_off_at', 'signed_off_by',
     ];
 
     protected function casts(): array
@@ -65,6 +67,7 @@ class Tender extends Model
             'estimated_value' => 'integer',
             'lots' => 'integer',
             'version' => 'integer',
+            'signed_off_at' => 'datetime',
         ];
     }
 

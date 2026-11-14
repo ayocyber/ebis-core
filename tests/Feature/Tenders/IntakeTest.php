@@ -234,8 +234,9 @@ it('lists and shows tenders in the shape the frontend expects', function () {
         ->where('tender.stage', 'requirements')
         ->where('tender.documents.0.role', 'Invitation to tender'));
 
-    // Sample-only stage pages send real tenders to their own page.
-    $this->get("/tenders/{$tender->id}/validation")->assertRedirect("/tenders/{$tender->id}");
+    // Later stages of a real tender send you back to the step they need first.
+    $this->get("/tenders/{$tender->id}/validation")->assertRedirect("/tenders/{$tender->id}/decision");
+    $this->get("/tenders/{$tender->id}/gaps")->assertRedirect("/tenders/{$tender->id}/eligibility");
 });
 
 it('lets viewers look but not upload or change anything', function () {

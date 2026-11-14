@@ -1,4 +1,4 @@
-import { submissionRules } from '@/data/mock-requirements';
+import { type SubmissionRule, submissionRules } from '@/data/mock-requirements';
 import type { ResolvedItem } from '@/lib/checklist';
 import { buildComplianceRows } from '@/lib/compliance';
 import { checkRules, findContradictions } from '@/lib/consistency';
@@ -24,7 +24,17 @@ export const priorityOrder: Priority[] = ['critical', 'high', 'medium', 'low'];
 const words = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0);
 
 /** Everything standing between the bid and a clean submission. */
-export function readinessIssues(rows: EligibilityRow[], sections: BidSection[], decision?: GoNoGoDecision, documents: ResolvedItem[] = []): Issue[] {
+/**
+ * `rules` are the tender's submission rules (TUN-04). Sample tenders use their own;
+ * real tenders pass none until rules can be read from the pack.
+ */
+export function readinessIssues(
+    rows: EligibilityRow[],
+    sections: BidSection[],
+    decision?: GoNoGoDecision,
+    documents: ResolvedItem[] = [],
+    rules: SubmissionRule[] = submissionRules(),
+): Issue[] {
     const issues: Issue[] = [];
     const add = (i: Omit<Issue, 'id'>) => issues.push({ id: `iss-${issues.length + 1}`, ...i });
 
@@ -101,7 +111,7 @@ export function readinessIssues(rows: EligibilityRow[], sections: BidSection[], 
         });
 
     // VAL-03: file size and page limits (formats and word limits are reported above / by the checklist)
-    for (const check of checkRules(submissionRules(), sections, documents)) {
+    for (const check of checkRules(rules, sections, documents)) {
         if (check.rule.id !== 'r-size' && check.rule.id !== 'r-pages') continue;
         for (const b of check.breaches) {
             if (check.rule.id === 'r-pages' && b.message.includes('-word limit')) continue;

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AuditCategory;
+use App\Enums\TenderStage;
 use App\Models\BidSection;
 use App\Models\BidSectionVersion;
 use App\Models\Requirement;
@@ -152,6 +153,10 @@ class BidController extends Controller
         }
 
         $bid->ensure($tender);
+        if ($withVersions && $tender->stage === TenderStage::Compliance) {
+            // Opening the editor means writing has started.
+            $tender->forceFill(['stage' => TenderStage::Drafting])->save();
+        }
         $sections = BidSection::with($withVersions ? ['versions'] : [])->where('tender_id', $tender->id)->orderBy('position')->get();
 
         return Inertia::render($component, array_filter([

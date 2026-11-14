@@ -12,10 +12,13 @@ use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\RequirementController;
 use App\Http\Controllers\TenantSwitchController;
 use App\Http\Controllers\TenderController;
+use App\Http\Controllers\ValidationController;
 use App\Http\Controllers\VaultDocumentController;
 use App\Models\AuditEvent;
+use App\Models\ReadinessCheck;
 use App\Models\Tender;
 use App\Models\TenderDecision;
+use App\Models\User;
 use App\Support\Eligibility\EligibilityRunner;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
@@ -56,8 +59,15 @@ Route::middleware(['auth', 'tenant'])->group(function () {
             'workspaces' => $tenders->mapWithKeys(function (Tender $t) use ($runner) {
                 $run = $runner->latestRun($t);
                 $decision = TenderDecision::with('decider')->where('tender_id', $t->id)->latest('created_at')->latest('id')->first();
+                $readiness = ReadinessCheck::where('tender_id', $t->id)->latest('created_at')->latest('id')->value('score');
+                $signer = $t->signed_off_by !== null ? User::find($t->signed_off_by) : null;
 
-                return [$t->id => ['rows' => $run ? $runner->rows($run) : [], 'decision' => $decision?->toFrontend()]];
+                return [$t->id => [
+                    'rows' => $run ? $runner->rows($run) : [],
+                    'decision' => $decision?->toFrontend(),
+                    'readiness' => $readiness,
+                    'signedOff' => $t->signed_off_at ? ['by' => $signer->name ?? 'Former member', 'at' => $t->signed_off_at->toIso8601ZuluString()] : null,
+                ]];
             }),
             'recentActivity' => AuditEvent::latest('id')->limit(5)->get()->map->toFrontend(),
         ]);
@@ -138,6 +148,14 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     Route::get('tenders/{tender}/checklist/{item}/file', [ChecklistController::class, 'download'])
         ->whereUuid(['tender', 'item'])->name('tenders.checklist.download');
 
+    // Readiness and sign-off of a real tender (M7).
+    Route::post('tenders/{tender}/readiness', [ValidationController::class, 'record'])
+        ->whereUuid('tender')->name('tenders.readiness.store');
+    Route::post('tenders/{tender}/signoff', [ValidationController::class, 'signOff'])
+        ->whereUuid('tender')->name('tenders.signoff.store');
+    Route::delete('tenders/{tender}/signoff', [ValidationController::class, 'undoSignOff'])
+        ->whereUuid('tender')->name('tenders.signoff.destroy');
+
     // Stage pages. Sample tenders (tnd-001…) show the preview built on sample data.
     // Real tenders (UUIDs) use the real page where one exists, otherwise their tender page.
     $real = [
@@ -148,6 +166,7 @@ Route::middleware(['auth', 'tenant'])->group(function () {
         'compliance' => [BidController::class, 'compliance'],
         'bid' => [BidController::class, 'bid'],
         'documents' => [ChecklistController::class, 'index'],
+        'validation' => [ValidationController::class, 'index'],
     ];
     foreach (['eligibility', 'gaps', 'decision', 'compliance', 'bid', 'requirements', 'documents', 'validation'] as $stage) {
         Route::get("tenders/{tender}/{$stage}", function (string $tender) use ($stage, $real) {
