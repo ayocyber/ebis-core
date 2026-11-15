@@ -21,3 +21,4 @@ tests
 *.log
 .idea
 .vscode
+test-kit

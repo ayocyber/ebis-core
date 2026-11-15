@@ -1,0 +1,108 @@
+# ProcurPilot test kit
+
+Everything here is **fictional** and marked "TEST DOCUMENT" inside each file. Use it to test
+ProcurPilot from sign-up to sign-off with data that behaves like the real thing.
+
+- **Company:** Northlight Digital Ltd, a small IT network company
+- **Tender:** Ashmoor County Council, managed network and Wi-Fi for 16 sites
+- **Deadline in the tender:** 18 December 2026, 12:00
+
+## 1. Register and create the company
+
+Register a new account, then create the company:
+
+| Field | Type this |
+|---|---|
+| Registered in | United Kingdom |
+| Company name | Northlight Digital Ltd |
+| Time zone | Europe/London |
+
+## 2. Fill in the Company profile (sidebar → Company profile → Edit)
+
+| Field | Value |
+|---|---|
+| Legal name | Northlight Digital Ltd |
+| Trading name | Northlight Digital |
+| Company number | 10834562 |
+| Incorporated | 9 May 2016 |
+| Registered office | Unit 4, Canal Wharf, Leeds, LS11 5PS |
+| VAT number | GB 284 7731 02 |
+| Website | northlight-digital.example |
+| Sector | IT and network services |
+| Employees | 28 |
+| Turnover | FY23 1,150,000 · FY24 1,420,000 · FY25 1,690,000 |
+| Insurance | Employer’s liability 10,000,000 · Public liability 5,000,000 · Professional indemnity 2,000,000 |
+
+The company and number are made up, so a Companies House check will say they don't
+match the register. That is expected.
+
+## 3. Upload the vault documents (folder "1 - Vault documents")
+
+| File | Title | Type | Expires |
+|---|---|---|---|
+| Certificate of incorporation.pdf | Certificate of incorporation | Company | (none) |
+| Employers liability insurance.pdf | Employer’s liability insurance | Insurance | 30 Jun 2027 |
+| Public liability insurance.pdf | Public liability insurance | Insurance | 30 Jun 2027 |
+| Professional indemnity insurance.pdf | Professional indemnity insurance | Insurance | 30 Jun 2027 |
+| Cyber Essentials Plus certificate.pdf | Cyber Essentials Plus | Certificate | 10 Dec 2026 |
+| ISO 9001 certificate.pdf | ISO 9001 | Certificate | 31 Mar 2028 |
+| Audited accounts FY23-FY25.pdf | Audited accounts FY23–FY25 | Financial | (none) |
+| Case study - Kingsford Council.pdf | Case study — Kingsford District Council | Case study | (none) |
+
+**Expected:** each one says its content matches what you entered.
+
+**Test the warnings:** also upload `WRONG FILE - upload as Employers liability.pdf` with the
+title "Employer’s liability insurance (test)", type Insurance, expiry 30 Jun 2027.
+**Expected: 4 warnings** (not an insurance certificate, wrong company, expiry not found,
+cover not found). Delete it afterwards.
+
+## 4. Upload the tender (folder "2 - Tender pack")
+
+Tenders → drag in all 4 files → title "Managed network and Wi-Fi for 16 council sites",
+buyer "Ashmoor County Council" (local authority), reference AMC/ICT/2026/112,
+deadline 18 Dec 2026 12:00, value 640,000.
+
+**Expected:** 4 documents read; roles "Invitation to tender", "Specification",
+"Selection questionnaire" and "Pricing schedule".
+
+## 5. Requirements
+
+**Expected: about 15 suggestions.** They include turnover £1m (2 years), Cyber Essentials
+Plus, public liability £5m and employer’s liability £10m (two separate ones), ISO 27001,
+two similar contracts, three years trading, the submission rules, the specification
+items, and two **scored** items (method statement **40%**, social value **10%**).
+Click **Confirm all**.
+
+## 6. Eligibility: what you should see
+
+| Requirement | Expected | Why |
+|---|---|---|
+| Turnover £1m in each of the last 2 years | ✅ Met | FY24 £1.42m, FY25 £1.69m |
+| Cyber Essentials Plus | ⚠️ Partially met | Expires 10 Dec 2026, **before** the 18 Dec deadline |
+| Public liability £5m | ✅ Met | £5m, with certificate |
+| Employer’s liability £10m | ✅ Met | £10m, with certificate |
+| ISO 27001 | ❓ Unknown | Not in the vault |
+| Two similar contracts | ⚠️ Partially met | Only 1 case study |
+| Trading 3 years | ✅ Met | Incorporated 2016 |
+| Submission rules, specification, scored items | ❓ Your call | No automatic rule: you decide |
+
+**Overall: "Not confirmed yet".**
+
+## 7. Gaps and decision
+
+**Expected gaps:** ISO 27001 is a **blocker** (certification takes ~2–3 months; the deadline
+is closer); renewing Cyber Essentials Plus and adding a second case study are fixable.
+Go / No-Go → tick every gap → **Bid**.
+
+## 8. The bid, checklist and readiness
+
+- **Compliance matrix:** every requirement mapped to a section; the scored ones show 40% and 10%.
+- **Write the bid:** type into a section, leave and come back. Your text is still there.
+- **Documents checklist:** the written response; the selection questionnaire, **pre-filled**
+  with Northlight’s details from the profile; the pricing schedule to upload; certificates
+  from the vault, with Cyber Essentials Plus flagged and ISO 27001 missing.
+- **Readiness:** critical issues listed. Sign-off is refused until they are fixed.
+
+## Re-making the files
+
+The files are generated by a script; ask the developer if they need changing.

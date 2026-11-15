@@ -37,9 +37,10 @@ class RequirementFinder
         $underCriteria = false;
         foreach (explode("\f", $text) as $i => $page) {
             foreach ($this->sentences($page) as $sentence) {
-                // "4. Selection criteria" turns the numbered clauses after it into requirements.
-                if (mb_strlen($sentence) <= 80 && preg_match(self::CRITERIA_HEADING, $sentence) && ! preg_match(self::TRIGGER, $sentence)) {
-                    $underCriteria = true;
+                // "4. Selection criteria" turns the numbered clauses after it into requirements;
+                // the next heading ("5. Award criteria") ends that.
+                if (self::isHeading($sentence)) {
+                    $underCriteria = (bool) preg_match(self::CRITERIA_HEADING, $sentence);
 
                     continue;
                 }
@@ -63,9 +64,10 @@ class RequirementFinder
     {
         $text = (string) preg_replace('/\s+/u', ' ', $page);
         // Break after full stops (but not after a clause number like "1.") and before
-        // numbered clauses ("1. …", "4.2 …"), so each clause keeps its number.
+        // numbered clauses ("1. …", "4.2 …"), so each clause keeps its number. A clause
+        // number has a dot, so dates such as "18 December" don't split a sentence.
         $parts = preg_split(
-            '/(?<=[.;!?])(?<!\b\d\.)(?<!\b\d\d\.)\s+(?=[A-Z(])|\s+(?=\d{1,2}(?:\.\d{1,2}){0,3}\.?\s+[A-Z])/u',
+            '/(?<=[.;!?])(?<!\b\d\.)(?<!\b\d\d\.)\s+(?=[A-Z(])|\s+(?=(?:\d{1,2}(?:\.\d{1,2}){1,3}|\d{1,2}\.)\s+[A-Z])/u',
             $text,
         ) ?: [];
 
@@ -85,13 +87,15 @@ class RequirementFinder
         }
 
         $criterion = $underCriteria && $section !== null;
-        if (mb_strlen($body) < 25 || (! $criterion && ! preg_match(self::TRIGGER, $body))) {
+        // A requirement says what is needed ("must", "minimum"…) or how it will be marked ("scored", "40% of the marks").
+        if (mb_strlen($body) < 25 || (! $criterion && ! preg_match(self::TRIGGER, $body) && ! preg_match(self::SCORED, $body))) {
             return [];
         }
 
         $category = match (true) {
-            $criterion, (bool) preg_match('/pass\/fail|pass or fail/i', $body) => RequirementCategory::Mandatory,
+            (bool) preg_match('/pass\/fail|pass or fail/i', $body) => RequirementCategory::Mandatory,
             (bool) preg_match(self::SCORED, $body) => RequirementCategory::Scored,
+            $criterion => RequirementCategory::Mandatory,
             (bool) preg_match(self::STRONG, $body) => RequirementCategory::Mandatory,
             default => RequirementCategory::Informational,
         };
@@ -122,13 +126,29 @@ class RequirementFinder
             section: $section,
             quote: $sentence,
             check: $insurance[0] ?? $this->check($body, $topic),
+            // "worth 40% of the marks" → a weight of 40 for scored requirements.
+            weight: $category === RequirementCategory::Scored && preg_match('/(\d{1,3})\s*%/', $body, $w) && (int) $w[1] <= 100 ? (int) $w[1] : null,
         )];
+    }
+
+    /**
+     * A section heading such as "4. Selection criteria", "Section 5: Award criteria"
+     * or "Selection criteria": short, no full stop, and not itself a requirement.
+     */
+    private static function isHeading(string $s): bool
+    {
+        if (mb_strlen($s) > 60 || preg_match(self::TRIGGER, $s) || str_ends_with(rtrim($s), '.')) {
+            return false;
+        }
+
+        return (bool) preg_match('/^(?:\d{1,2}\.|section\s+\d+\b)\s*[-–:]?\s*[A-Za-z]/i', $s)
+            || (bool) preg_match(self::CRITERIA_HEADING, $s);
     }
 
     private function topic(string $s): RequirementTopic
     {
         return match (true) {
-            (bool) preg_match('/\b(turnover|accounts|financial standing|credit|revenue|bank reference)\b/i', $s) => RequirementTopic::Financial,
+            (bool) preg_match('/\b(turnover|accounts|financial standing|credit|revenue|bank reference|trading)\b/i', $s) => RequirementTopic::Financial,
             (bool) preg_match('/\binsurance|liability|indemnity\b/i', $s) => RequirementTopic::Insurance,
             (bool) preg_match('/\b(ISO|Cyber Essentials|certif\w*|accredit\w*|Toolkit|DSPT)\b/i', $s) => RequirementTopic::Certification,
             (bool) preg_match('/\b(experience|similar (scope|contracts?)|case stud\w*|references?|track record|delivered)\b/i', $s) => RequirementTopic::Experience,

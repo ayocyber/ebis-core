@@ -22,6 +22,8 @@ final readonly class FoundRequirement
         public string $quote,
         public ?array $check,
         public ?string $key = null,
+        /** Percentage weight of a scored requirement, when the text gives one */
+        public ?int $weight = null,
     ) {}
 
     public function hashSource(): string

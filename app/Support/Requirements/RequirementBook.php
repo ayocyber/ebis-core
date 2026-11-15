@@ -63,6 +63,7 @@ class RequirementBook
                 'section' => $f->section,
                 'quote' => $f->quote,
                 'check_rule' => $f->check,
+                'weight' => $f->weight,
                 'origin' => 'found',
                 'quote_hash' => $hash,
             ]);

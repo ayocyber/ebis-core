@@ -6,6 +6,7 @@ use App\Models\Requirement;
 use App\Models\Tenant;
 use App\Models\Tender;
 use App\Models\User;
+use App\Support\Requirements\RequirementFinder;
 use App\Support\Tenancy\CurrentTenant;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\TenderFiles;
@@ -166,4 +167,18 @@ it('back-fills suggestions for documents read before suggestions existed, once',
     $this->artisan('tenders:suggest-requirements')->expectsOutput('0 requirement suggestions added.')->assertSuccessful();
 
     expect(asCompany($this->tenant, fn () => Requirement::suggested()->count()))->toBe(5);
+});
+
+it('keeps dates inside a sentence, ends criteria at the next heading, and reads scored weights', function () {
+    $found = (new RequirementFinder)->find(
+        '1. Tenders must be submitted by 12:00 on 18 December 2026. 4. Selection criteria 4.1 ISO/IEC 27001 certification for information security. '
+        .'5. Award criteria 5.1 Your method statement will be scored and is worth 40% of the quality marks. 5.2 A note about parking on the site at the buyer offices.'
+    );
+    $by = collect($found)->keyBy('section');
+
+    expect($by['1']->title)->toBe('Tenders must be submitted by 12:00 on 18 December 2026')
+        ->and($by['4.1']->category->value)->toBe('mandatory') // a selection criterion, though it says no "must"
+        ->and($by['5.1']->category->value)->toBe('scored')
+        ->and($by['5.1']->weight)->toBe(40)
+        ->and($by->has('5.2'))->toBeFalse(); // under "Award criteria" and not a requirement
 });
