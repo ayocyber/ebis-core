@@ -6,12 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { setGapStatusFor } from '@/hooks/use-tender-workspace';
 import { firstError, saveDocument } from '@/hooks/use-vault';
-import { formatBytes } from '@/lib/ebis';
+import { formatBytes, formatDate } from '@/lib/ebis';
 import { cn } from '@/lib/utils';
 import { type DocUsage, vaultCategoryMeta, vaultCategoryOrder } from '@/lib/vault';
 import type { MissingEvidence, Tender, VaultCategory, VaultDocument } from '@/types/ebis';
 import { Link } from '@inertiajs/react';
-import { CheckCircle2, FileUp, Loader2, PartyPopper, ScanText, UploadCloud } from 'lucide-react';
+import { CheckCircle2, FileUp, Loader2, PartyPopper, UploadCloud } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 const MAX = 25 * 1024 * 1024;
@@ -32,9 +32,7 @@ export interface UploadTarget {
     };
 }
 
-type Step = 'pick' | 'reading' | 'details' | 'done';
-
-const iso = (d: Date) => d.toISOString().slice(0, 10);
+type Step = 'pick' | 'details' | 'done';
 
 export function UploadDialog({ open, onOpenChange, target }: { open: boolean; onOpenChange: (o: boolean) => void; target: UploadTarget }) {
     return (
@@ -67,8 +65,9 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
         category: (base?.category ?? target.gap?.category ?? target.missing?.category ?? 'certificate') as VaultCategory,
         issuer: base?.issuer ?? '',
         reference: '',
-        issuedAt: iso(new Date()),
-        expiresAt: base?.expiresAt ? iso(new Date(Date.now() + 365 * 86_400_000)) : '',
+        // Dates come from the document itself; nothing is guessed (a wrong expiry would skew every eligibility check).
+        issuedAt: '',
+        expiresAt: '',
     });
     const set = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
 
@@ -79,9 +78,8 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
         setError(null);
         setFile(f);
         if (!form.title) set({ title: f.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ') });
-        // Simulated read: the real engine extracts issuer, reference and dates.
-        setStep('reading');
-        window.setTimeout(() => setStep('details'), 1400);
+        // The user copies the details from the document; there is no automatic reading yet.
+        setStep('details');
     };
 
     const [saving, setSaving] = useState(false);
@@ -189,7 +187,7 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
                           ? `Closes ${target.gap.code} and is saved to your vault, so future tenders find it too.`
                           : base
                             ? 'The old version is archived. Tenders using it switch to the new one.'
-                            : 'ProcurPilot reads the document and fills in the details for you.'}
+                            : 'Add the details from the document, especially the expiry date.'}
                 </DialogDescription>
             </DialogHeader>
 
@@ -239,17 +237,6 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
                 </div>
             )}
 
-            {step === 'reading' && (
-                <div className="flex flex-col items-center gap-3 py-10 text-center" aria-live="polite">
-                    <span className="relative flex size-12 items-center justify-center">
-                        <ScanText className="text-primary size-6" />
-                        <Loader2 className="text-primary/40 absolute size-12 animate-spin" strokeWidth={1} />
-                    </span>
-                    <p className="font-medium">Reading {file?.name}…</p>
-                    <p className="text-muted-foreground text-xs">Looking for the issuer, reference number and dates</p>
-                </div>
-            )}
-
             {step === 'details' && file && (
                 <form
                     className="animate-fade-up space-y-4"
@@ -262,7 +249,7 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
                         <FileUp className="text-primary size-5 shrink-0" />
                         <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium">{file.name}</p>
-                            <p className="text-muted-foreground text-xs">{formatBytes(file.size)} · details read by ProcurPilot, check them below</p>
+                            <p className="text-muted-foreground text-xs">{formatBytes(file.size)} · add its details below</p>
                         </div>
                         <button type="button" onClick={() => setStep('pick')} className="text-primary text-xs font-medium hover:underline">
                             Change
@@ -310,7 +297,11 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
                             <Label htmlFor="vd-expires">Expires</Label>
                             <Input id="vd-expires" type="date" value={form.expiresAt} onChange={(e) => set({ expiresAt: e.target.value })} />
                             <p className={cn('text-xs', expiryInPast ? 'text-status-not-met' : 'text-muted-foreground')}>
-                                {expiryInPast ? 'This date has passed — upload the current version.' : 'Leave empty if it never expires.'}
+                                {expiryInPast
+                                    ? 'This date has passed — upload the current version.'
+                                    : base?.expiresAt && !form.expiresAt
+                                      ? `The current one expires ${formatDate(base.expiresAt)}. Enter the new date from the document.`
+                                      : 'Leave empty if it never expires.'}
                             </p>
                         </div>
                     </div>

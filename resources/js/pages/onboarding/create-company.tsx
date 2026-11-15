@@ -104,8 +104,8 @@ export default function CreateCompany({ isFirstCompany = true }: { isFirstCompan
                             {isFirstCompany ? 'Tell us about your company' : 'Add another company'}
                         </h1>
                         <p className="text-muted-foreground max-w-2xl text-pretty">
-                            The basics ProcurPilot needs to check you against tenders. Tenders, evidence and bids are kept separately for each company, and
-                            you will be its Owner.
+                            The basics ProcurPilot needs to check you against tenders. Tenders, evidence and bids are kept separately for each
+                            company, and you will be its Owner.
                         </p>
                     </div>
 
@@ -316,7 +316,7 @@ export default function CreateCompany({ isFirstCompany = true }: { isFirstCompan
                             <NextStep
                                 icon={UploadCloud}
                                 title="Your documents"
-                                text="Drop in certificates, insurance and accounts. ProcurPilot reads them once and reuses them for every bid."
+                                text="Drop in certificates, insurance and accounts once. ProcurPilot reuses them for every bid."
                             />
                             <NextStep
                                 icon={FileSearch}
