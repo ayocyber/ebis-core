@@ -24,6 +24,11 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Free UK company register: https://developer.company-information.service.gov.uk
+    'companies_house' => [
+        'key' => env('COMPANIES_HOUSE_API_KEY'),
+    ],
+
     'resend' => [
         'key' => env('RESEND_KEY'),
     ],

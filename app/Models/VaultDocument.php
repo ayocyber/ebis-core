@@ -41,6 +41,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property Carbon|null $alerted_90_at
  * @property Carbon|null $alerted_30_at
  * @property int|null $uploaded_by
+ * @property string|null $check_status passed, warnings or unreadable; null if never checked
+ * @property list<array{level: string, text: string}>|null $check_notes
+ * @property Carbon|null $checked_at
  * @property Carbon $created_at
  * @property-read Collection<int, ProfileFact> $facts
  * @property-read User|null $uploader
@@ -57,6 +60,7 @@ class VaultDocument extends Model
     protected $fillable = [
         'title', 'category', 'file_name', 'kind', 'mime_type', 'size_bytes', 'disk', 'path', 'sha256',
         'issuer', 'reference', 'issued_at', 'expires_at', 'summary', 'replaces_id', 'uploaded_by',
+        'check_status', 'check_notes', 'checked_at',
     ];
 
     protected function casts(): array
@@ -69,6 +73,8 @@ class VaultDocument extends Model
             'archived_at' => 'datetime',
             'alerted_90_at' => 'datetime',
             'alerted_30_at' => 'datetime',
+            'check_notes' => 'array',
+            'checked_at' => 'datetime',
         ];
     }
 
@@ -129,6 +135,12 @@ class VaultDocument extends Model
             'uploadedAt' => $this->created_at->toIso8601ZuluString(),
             'uploadedBy' => $this->uploader->name ?? 'Former member',
             'replaces' => $this->replaces_id,
+            // What the content check found (null: uploaded before checks existed).
+            'check' => $this->check_status === null ? null : [
+                'status' => $this->check_status,
+                'notes' => $this->check_notes ?? [],
+                'checkedAt' => $this->checked_at?->toIso8601ZuluString(),
+            ],
         ], fn ($v) => $v !== null);
     }
 }

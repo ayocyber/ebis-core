@@ -11,15 +11,18 @@ import { type SharedData } from '@/types';
 import type { CompanyProfile } from '@/types/ebis';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
+    AlertTriangle,
     Award,
     BadgeCheck,
     Building2,
     Check,
+    CheckCircle2,
     HeartHandshake,
     Landmark,
     Loader2,
     Pencil,
     Plus,
+    RefreshCw,
     ShieldCheck,
     TrendingUp,
     Users,
@@ -35,10 +38,10 @@ const gbp = (n: number, compact = false) =>
         maximumFractionDigits: compact ? 2 : 0,
     }).format(n);
 
-type ProfileProps = SharedData & { profile: CompanyProfile & { version: number } };
+type ProfileProps = SharedData & { profile: CompanyProfile & { version: number }; companiesHouseEnabled: boolean };
 
 export default function CompanyProfilePage() {
-    const { role, profile } = usePage<ProfileProps>().props;
+    const { role, profile, companiesHouseEnabled } = usePage<ProfileProps>().props;
     const editable = canEdit(role);
     const { documents, missing } = useVault();
     const [editing, setEditing] = useState(false);
@@ -76,10 +79,13 @@ export default function CompanyProfilePage() {
 
     const save = () => {
         setSaving(true);
+        // The register check is read-only; it is not sent back with the profile.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { companiesHouse, ...fields } = draft;
         router.patch(
             route('company.update'),
             {
-                ...draft,
+                ...fields,
                 turnover: draft.turnover.filter((y) => y.year.trim()),
                 insurance: draft.insurance.filter((i) => i.label.trim()),
                 socialValue: draft.socialValue.map((v) => v.trim()).filter(Boolean),
@@ -235,6 +241,7 @@ export default function CompanyProfilePage() {
                                 </>
                             )}
                         </dl>
+                        {!editing && <CompaniesHousePanel profile={profile} enabled={companiesHouseEnabled} editable={editable} />}
                     </Card>
 
                     {/* Financial */}
@@ -432,8 +439,8 @@ export default function CompanyProfilePage() {
                             </ul>
                         )}
                         <p className="text-muted-foreground bg-muted/50 mt-4 rounded-lg p-3 text-xs leading-relaxed">
-                            Social value is usually worth at least 10% of the score in UK public tenders. ProcurPilot uses these commitments as a starting
-                            point and tailors them to each buyer.
+                            Social value is usually worth at least 10% of the score in UK public tenders. ProcurPilot uses these commitments as a
+                            starting point and tailors them to each buyer.
                         </p>
                     </Card>
                 </div>
@@ -543,5 +550,71 @@ function VaultLink() {
         <Link href={route('vault.index')} className="text-primary text-xs font-medium hover:underline">
             Open vault
         </Link>
+    );
+}
+
+/** Last check of the company against the Companies House register. */
+function CompaniesHousePanel({ profile, enabled, editable }: { profile: CompanyProfile; enabled: boolean; editable: boolean }) {
+    const [checking, setChecking] = useState(false);
+    const ch = profile.companiesHouse;
+    const allGood = ch?.found && ch.nameMatches && ch.dateMatches && ch.active;
+    const line = (ok: boolean | undefined, good: string, bad: string) => (
+        <li className="flex items-start gap-1.5 text-xs">
+            {ok ? (
+                <CheckCircle2 className="text-status-met mt-px size-3.5 shrink-0" />
+            ) : (
+                <AlertTriangle className="text-status-partial mt-px size-3.5 shrink-0" />
+            )}
+            <span>{ok ? good : bad}</span>
+        </li>
+    );
+
+    return (
+        <div className="mt-4 rounded-lg border p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="flex items-center gap-1.5 text-sm font-medium">
+                    {allGood ? <ShieldCheck className="text-status-met size-4" /> : <Landmark className="text-muted-foreground size-4" />}
+                    Companies House
+                </p>
+                {editable && enabled && (
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={checking || !profile.companyNumber}
+                        onClick={() =>
+                            router.post(
+                                route('company.verify'),
+                                {},
+                                { preserveScroll: true, onStart: () => setChecking(true), onFinish: () => setChecking(false) },
+                            )
+                        }
+                    >
+                        <RefreshCw className={cn('size-3.5', checking && 'animate-spin')} /> {ch ? 'Check again' : 'Verify with Companies House'}
+                    </Button>
+                )}
+            </div>
+            {!enabled ? (
+                <p className="text-muted-foreground mt-1.5 text-xs">The check against the official register isn’t switched on yet.</p>
+            ) : !ch ? (
+                <p className="text-muted-foreground mt-1.5 text-xs">
+                    Not checked yet. Confirms your name, status and incorporation date against the official register.
+                </p>
+            ) : !ch.found ? (
+                <ul className="mt-2 space-y-1.5">{line(false, '', `No company is registered with number ${ch.number}. Check the number.`)}</ul>
+            ) : (
+                <>
+                    <ul className="mt-2 space-y-1.5">
+                        {line(ch.nameMatches, `Name matches: ${ch.name}`, `The register has a different name: ${ch.name}`)}
+                        {line(ch.active, 'Status: active', `Status on the register: ${ch.status}`)}
+                        {line(
+                            ch.dateMatches,
+                            'Incorporation date matches',
+                            `The register says incorporated ${ch.incorporatedOn ? formatDate(ch.incorporatedOn) : 'on an unknown date'}`,
+                        )}
+                    </ul>
+                    <p className="text-muted-foreground mt-2 text-[11px]">Checked {formatDate(ch.checkedAt)}</p>
+                </>
+            )}
+        </div>
     );
 }

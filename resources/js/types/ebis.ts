@@ -328,6 +328,29 @@ export interface VaultDocument {
     uploadedBy: string;
     /** Set when this document replaced an older version */
     replaces?: string;
+    /** What reading the document found, compared with what was entered (absent: uploaded before checks existed) */
+    check?: DocumentCheck;
+}
+
+export interface DocumentCheck {
+    /** passed: everything matched; warnings: something to look at; unreadable: no text (scan or photo) */
+    status: 'passed' | 'warnings' | 'unreadable';
+    notes: { level: 'ok' | 'warn'; text: string }[];
+    checkedAt?: ISODate;
+}
+
+/** The company as the Companies House register has it, from the last check. */
+export interface CompaniesHouseCheck {
+    found: boolean;
+    checkedAt: ISODate;
+    number: string;
+    name?: string;
+    status?: string;
+    incorporatedOn?: string | null;
+    address?: string;
+    nameMatches?: boolean;
+    dateMatches?: boolean;
+    active?: boolean;
 }
 
 /** Something a tender asked for that isn't in the vault. */
@@ -356,6 +379,8 @@ export interface CompanyProfile {
     insurance: { label: string; cover: number }[];
     socialValue: string[];
     about: string;
+    /** Last check against the Companies House register */
+    companiesHouse?: CompaniesHouseCheck | null;
 }
 
 /* ------------------------------------------------------------------ */

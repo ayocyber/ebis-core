@@ -140,6 +140,12 @@ class EligibilityChecker
         $have = (int) floor($since->diffInYears($this->deadline));
         $facts = [$this->fact('incorporated', 'Incorporated', $since->format('j M Y'), 'company_profile', $this->firstDoc('company'))];
         $why = "The buyer asks for at least {$years} years of trading. You were incorporated on {$since->format('j M Y')}, {$have} years before the deadline.";
+        $ch = $this->profile->companies_house ?? null;
+        if ($ch !== null && $ch['found']) {
+            $why .= ($ch['dateMatches'] ?? false)
+                ? ' Confirmed with Companies House.'
+                : ' Companies House has a different date ('.($ch['incorporatedOn'] ?? 'none').'); check your profile.';
+        }
 
         return $have >= $years
             ? new Outcome(S::Met, "Trading for {$have} years", $why, facts: $facts)
@@ -168,6 +174,14 @@ class EligibilityChecker
     /** EVD-02: a document that runs out before the deadline only partly meets it. */
     private function withExpiry(VaultDocument $doc, Outcome $met): Outcome
     {
+        // The content check's warnings stay visible in the evidence (they don't change the status).
+        $warnings = collect($doc->check_notes ?? [])->where('level', 'warn')->pluck('text');
+        if ($warnings->isNotEmpty()) {
+            $met = new Outcome($met->status, $met->summary,
+                $met->reasoning." ProcurPilot’s check of this document found: {$warnings->implode(' ')}",
+                $met->method, $met->facts, $met->stale, $met->fix);
+        }
+
         if ($doc->expires_at === null || $doc->expires_at->gte($this->deadline->copy()->startOfDay())) {
             return $met;
         }

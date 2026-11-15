@@ -31,7 +31,29 @@ class VaultDocumentController extends Controller
         $user = $request->user();
         $doc = $uploader->store($request->file('file'), $request->safe()->except('file'), $user);
 
-        return back()->with('success', "{$doc->title} saved to the vault.");
+        return back()->with('success', "{$doc->title} saved to the vault.".self::checkSummary($doc));
+    }
+
+    /** Read the document again, e.g. after correcting its details or the company profile. */
+    public function check(string $document, VaultUploader $uploader): RedirectResponse
+    {
+        Gate::authorize('edit-tenant-data');
+        $doc = VaultDocument::findOrFail($document);
+        $uploader->check($doc);
+
+        return back()->with('success', "{$doc->title} checked.".self::checkSummary($doc->fresh() ?? $doc));
+    }
+
+    private static function checkSummary(VaultDocument $doc): string
+    {
+        $warnings = collect($doc->check_notes ?? [])->where('level', 'warn')->count();
+
+        return match ($doc->check_status) {
+            'passed' => ' Its content matches what you entered.',
+            'unreadable' => ' Its text couldn’t be read, so check it yourself.',
+            'warnings' => " {$warnings} thing".($warnings > 1 ? 's' : '').' to look at: open it in the vault.',
+            default => '',
+        };
     }
 
     // Ids, not route-model binding: binding runs before the `tenant` middleware sets

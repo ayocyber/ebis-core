@@ -78,3 +78,8 @@ services:
         value: "true"
       - key: DEMO_PASSWORD
         sync: false
+
+      # Companies House register check (free key: developer.company-information.service.gov.uk).
+      # Leave empty to switch the check off.
+      - key: COMPANIES_HOUSE_API_KEY
+        sync: false

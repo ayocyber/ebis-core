@@ -4,6 +4,7 @@ namespace App\Support\Vault;
 
 use App\Enums\AuditCategory;
 use App\Enums\VaultCategory;
+use App\Models\CompanyProfile;
 use App\Models\ProfileFact;
 use App\Models\User;
 use App\Models\VaultDocument;
@@ -37,10 +38,46 @@ class VaultUploader
         }
 
         try {
-            return DB::transaction(fn () => $this->record($file, $details, $by, $disk, $path, $extension));
+            $doc = DB::transaction(fn () => $this->record($file, $details, $by, $disk, $path, $extension));
         } catch (Throwable $e) {
             Storage::disk($disk)->delete($path);
             throw $e;
+        }
+
+        $this->check($doc, (string) $file->getRealPath());
+
+        return $doc;
+    }
+
+    /**
+     * Check the document's text against what it claims to be. A failing check never
+     * stops the upload; the document is then simply left unchecked.
+     */
+    public function check(VaultDocument $doc, ?string $localPath = null): void
+    {
+        $temp = null;
+        try {
+            if ($localPath === null) {
+                $temp = (string) tempnam(sys_get_temp_dir(), 'vchk');
+                $in = Storage::disk($doc->disk)->readStream($doc->path);
+                if ($in === null) {
+                    return;
+                }
+                $out = fopen($temp, 'wb');
+                stream_copy_to_stream($in, $out);
+                fclose($out);
+                fclose($in);
+                $localPath = $temp;
+            }
+
+            $result = app(DocumentChecker::class)->check($doc, $localPath, CompanyProfile::first());
+            $doc->forceFill(['check_status' => $result->status(), 'check_notes' => $result->notes, 'checked_at' => now()])->save();
+        } catch (Throwable $e) {
+            report($e);
+        } finally {
+            if ($temp !== null) {
+                @unlink($temp);
+            }
         }
     }
 

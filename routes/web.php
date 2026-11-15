@@ -80,6 +80,11 @@ Route::middleware(['auth', 'tenant'])->group(function () {
         ->whereUuid('document')->name('vault.download');
     Route::delete('vault/documents/{document}', [VaultDocumentController::class, 'destroy'])
         ->whereUuid('document')->name('vault.destroy');
+    Route::post('vault/documents/{document}/check', [VaultDocumentController::class, 'check'])
+        ->whereUuid('document')->name('vault.check');
+
+    // Check the company's details against the Companies House register.
+    Route::post('company/verify', [CompanyProfileController::class, 'verify'])->name('company.verify');
 
     Route::get('company', [CompanyProfileController::class, 'show'])->name('company.profile');
     Route::patch('company', [CompanyProfileController::class, 'update'])->name('company.update');

@@ -8,8 +8,20 @@ import { formatBytes, formatDate } from '@/lib/ebis';
 import { cn } from '@/lib/utils';
 import { expiryLabel, expiryState, usageFor, vaultCategoryMeta } from '@/lib/vault';
 import type { VaultDocument } from '@/types/ebis';
-import { Link } from '@inertiajs/react';
-import { ArrowUpRight, Download, FileText, RefreshCw, ScanText, Trash2 } from 'lucide-react';
+import { Link, router } from '@inertiajs/react';
+import {
+    AlertTriangle,
+    ArrowUpRight,
+    CheckCircle2,
+    Download,
+    FileText,
+    RefreshCw,
+    ScanText,
+    ShieldAlert,
+    ShieldCheck,
+    ShieldQuestion,
+    Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 
 const factsById = Object.fromEntries(Object.values(profileFacts).map((f) => [f.id, f]));
@@ -116,10 +128,12 @@ function Body({ doc, canEdit, onReplace, onDeleted }: { doc: VaultDocument; canE
                     ))}
                 </dl>
 
+                <ContentCheck doc={doc} canEdit={canEdit} />
+
                 {facts.length > 0 && (
                     <section>
                         <h3 className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wide uppercase">
-                            <ScanText className="size-3.5" /> What ProcurPilot read from it
+                            <ScanText className="size-3.5" /> What it proves
                         </h3>
                         <ul className="mt-2 space-y-2">
                             {facts.map((f) => (
@@ -197,5 +211,70 @@ function Body({ doc, canEdit, onReplace, onDeleted }: { doc: VaultDocument; canE
                 </div>
             )}
         </>
+    );
+}
+
+/** What reading the document found, compared with what was entered. */
+function ContentCheck({ doc, canEdit }: { doc: VaultDocument; canEdit: boolean }) {
+    const [checking, setChecking] = useState(false);
+    const check = doc.check;
+    const meta = {
+        passed: { label: 'Matches what you entered', className: 'text-status-met', icon: ShieldCheck },
+        warnings: { label: 'Something to look at', className: 'text-status-partial', icon: ShieldAlert },
+        unreadable: { label: 'Couldn’t be checked', className: 'text-muted-foreground', icon: ShieldQuestion },
+    } as const;
+    const m = check ? meta[check.status] : null;
+
+    return (
+        <section>
+            <div className="flex items-center justify-between gap-2">
+                <h3 className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wide uppercase">
+                    <ScanText className="size-3.5" /> Content check
+                </h3>
+                {canEdit && (
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs"
+                        disabled={checking}
+                        onClick={() =>
+                            router.post(
+                                route('vault.check', doc.id),
+                                {},
+                                { preserveScroll: true, onStart: () => setChecking(true), onFinish: () => setChecking(false) },
+                            )
+                        }
+                    >
+                        <RefreshCw className={cn('size-3.5', checking && 'animate-spin')} /> {check ? 'Check again' : 'Check now'}
+                    </Button>
+                )}
+            </div>
+            {!check || !m ? (
+                <p className="text-muted-foreground mt-2 text-sm">
+                    Not checked yet: it was uploaded before ProcurPilot read documents. Check it now to compare it with what was entered.
+                </p>
+            ) : (
+                <div className="mt-2 rounded-lg border p-3">
+                    <p className={cn('flex items-center gap-1.5 text-sm font-medium', m.className)}>
+                        <m.icon className="size-4" /> {m.label}
+                    </p>
+                    <ul className="mt-2 space-y-1.5">
+                        {check.notes.map((n, i) => (
+                            <li key={i} className="flex items-start gap-1.5 text-xs">
+                                {n.level === 'ok' ? (
+                                    <CheckCircle2 className="text-status-met mt-px size-3.5 shrink-0" />
+                                ) : (
+                                    <AlertTriangle className="text-status-partial mt-px size-3.5 shrink-0" />
+                                )}
+                                <span>{n.text}</span>
+                            </li>
+                        ))}
+                    </ul>
+                    <p className="text-muted-foreground mt-2 text-[11px]">
+                        Reads the text only, without AI. It flags what to look at; it can’t prove a document is genuine.
+                    </p>
+                </div>
+            )}
+        </section>
     );
 }
