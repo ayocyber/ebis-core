@@ -209,3 +209,14 @@ it('does not suggest a notice line that only points to the tender pack', functio
     $this->post('/tenders/find/'.Opportunity::sole()->id.'/bid')->assertRedirect();
     withinCompany($this->tenant, fn () => expect(Requirement::pluck('text')->implode(' '))->not->toContain('quotation pack'));
 });
+
+it('lists a picked tender with the others, on the tenders page and the dashboard', function () {
+    fakeFeeds([release()]);
+    app(OpportunityFeed::class)->fetch();
+    $this->post('/tenders/find/'.Opportunity::sole()->id.'/bid')->assertRedirect();
+    $id = withinCompany($this->tenant, fn () => Tender::sole()->id);
+
+    foreach (['/tenders', '/dashboard', "/tenders/{$id}", "/tenders/{$id}/requirements", "/tenders/{$id}/eligibility"] as $url) {
+        $this->get($url)->assertOk();
+    }
+});
