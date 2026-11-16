@@ -80,7 +80,8 @@ class OpportunitySearch
             // The database match is loose ("it" inside "with"); keep whole-word matches.
             ->filter(fn (array $r) => $terms === [] || $r['matched'] !== []);
 
-        $sorted = match ($filters['sort'] ?? 'match') {
+        // Without search words there is nothing to rank by, so the newest come first.
+        $sorted = match ($filters['sort'] ?? ($terms === [] ? 'newest' : 'match')) {
             'closing' => $results->sortBy(fn (array $r) => $r['opportunity']->deadline->getTimestamp()),
             'newest' => $results->sortByDesc(fn (array $r) => $r['opportunity']->published_at?->getTimestamp() ?? 0),
             'value' => $results->sortByDesc(fn (array $r) => $r['opportunity']->value ?? 0),

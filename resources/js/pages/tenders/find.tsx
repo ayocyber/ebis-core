@@ -85,6 +85,9 @@ const BUYER_TYPES: Record<string, string> = {
 };
 
 const ANY = 'any';
+
+/** Common starting points; the user adds and saves the ones that fit. */
+const SUGGESTIONS = ['network', 'Wi-Fi', 'IT support', 'software', 'cyber', 'cleaning', 'construction', 'consultancy', 'training'];
 const on = (v: unknown) => v === true || v === '1' || v === 'true';
 
 function ago(iso: string): string {
@@ -100,6 +103,8 @@ export default function FindTenders(props: Props) {
     const { role } = usePage<SharedData>().props;
     const [q, setQ] = useState(filters.q ?? '');
     const showAll = on(filters.all);
+    // Every open tender is listed: "show all", or no search words set yet.
+    const noWords = !filters.q && (showAll || props.keywords.length === 0);
 
     const go = (patch: Partial<Filters>) => {
         const next: Record<string, unknown> = { ...filters, page: undefined, ...patch };
@@ -190,7 +195,7 @@ export default function FindTenders(props: Props) {
                         />
                         <FilterSelect
                             label="Sort"
-                            value={filters.sort ?? 'match'}
+                            value={filters.sort ?? (noWords ? 'newest' : 'match')}
                             onChange={(v) => go({ sort: v === 'match' ? undefined : v })}
                             options={[
                                 ['match', 'Best match'],
@@ -209,9 +214,9 @@ export default function FindTenders(props: Props) {
                 <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                     <p className="text-muted-foreground">
                         <span className="text-foreground font-semibold tabular-nums">{total}</span>{' '}
-                        {filters.q ? `match “${filters.q}”` : showAll ? 'open tenders' : 'match your search words'}
+                        {filters.q ? `match “${filters.q}”` : noWords ? 'open tenders' : 'match your search words'}
                     </p>
-                    {(filters.q || showAll) && (
+                    {(filters.q || (showAll && props.keywords.length > 0)) && (
                         <button
                             className="text-primary text-xs font-medium hover:underline"
                             onClick={() => (setQ(''), go({ q: undefined, all: undefined }))}
@@ -219,7 +224,7 @@ export default function FindTenders(props: Props) {
                             Back to tenders matching your search words
                         </button>
                     )}
-                    {!filters.q && !showAll && (
+                    {!filters.q && !noWords && (
                         <button className="text-primary text-xs font-medium hover:underline" onClick={() => go({ all: true })}>
                             Show all open tenders
                         </button>
@@ -277,7 +282,8 @@ function FilterSelect({
     return (
         <Select value={value} onValueChange={onChange}>
             <SelectTrigger className="h-9 sm:w-auto sm:min-w-36" aria-label={label}>
-                <SelectValue />
+                {/* The label is given explicitly so it shows before the list is first opened. */}
+                <SelectValue>{options.find(([v]) => v === value)?.[1]}</SelectValue>
             </SelectTrigger>
             <SelectContent>
                 {options.map(([v, l]) => (
@@ -313,9 +319,11 @@ function KeywordEditor({ keywords, keywordsAreDefault, editable }: Props & { edi
                         <Sparkles className="text-primary size-4" /> Your search words
                     </p>
                     <p className="text-muted-foreground mt-0.5 text-xs">
-                        {keywordsAreDefault
-                            ? 'Suggested from the sector in your company profile. Change them to what you actually do.'
-                            : 'Tenders that mention these in their title, category or description are shown first.'}
+                        {keywords.length === 0 && keywordsAreDefault
+                            ? 'Add words for what your company does, so the tenders that fit you are shown first. Your company profile has no sector yet to suggest them from.'
+                            : keywordsAreDefault
+                              ? 'Suggested from the sector in your company profile. Change them to what you actually do.'
+                              : 'Only tenders that mention these in their title, category or description are shown.'}
                     </p>
                 </div>
                 {changed && editable && (
@@ -373,6 +381,20 @@ function KeywordEditor({ keywords, keywordsAreDefault, editable }: Props & { edi
                     </form>
                 )}
             </div>
+            {editable && words.length < 3 && (
+                <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
+                    <span className="text-muted-foreground">Try:</span>
+                    {SUGGESTIONS.filter((s) => !words.some((w) => w.toLowerCase() === s.toLowerCase())).map((s) => (
+                        <button
+                            key={s}
+                            onClick={() => setWords([...words, s])}
+                            className="hover:border-primary/40 hover:text-primary rounded-full border border-dashed px-2.5 py-0.5 transition-colors"
+                        >
+                            + {s}
+                        </button>
+                    ))}
+                </div>
+            )}
             {error && (
                 <p role="alert" className="text-status-not-met mt-2 text-xs">
                     {error}
