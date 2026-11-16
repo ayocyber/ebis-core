@@ -9,3 +9,6 @@ Artisan::command('inspire', function () {
 
 // PRF-05: 90- and 30-day renewal reminders for vault documents.
 Schedule::command('vault:expiry-alerts')->dailyAt('07:00')->timezone('Europe/London')->withoutOverlapping();
+
+// New tenders from Find a Tender and Contracts Finder.
+Schedule::command('tenders:fetch-opportunities')->hourly()->withoutOverlapping();

@@ -3,7 +3,6 @@
 namespace App\Support\Vault;
 
 use App\Support\Tenders\TextExtractor;
-use Carbon\Carbon;
 
 /**
  * Reads an uploaded file before it is saved, so the upload form can be filled in from

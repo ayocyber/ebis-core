@@ -195,7 +195,8 @@ class RequirementFinder
      */
     private function insuranceChecks(string $s): array
     {
-        preg_match_all('/(public liability|employer\'?s?\'?\s+liability|professional indemnity)[^£\d]{0,60}?'.self::MONEY.'/i', $s, $all, PREG_SET_ORDER);
+        // "Employers (Compulsory) Liability Insurance = £10 million" counts too.
+        preg_match_all('/(public liability|employer\'?s?\'?(?:\s*\([^)]{0,20}\))?\s+liability|professional indemnity)[^£\d]{0,60}?'.self::MONEY.'/i', $s, $all, PREG_SET_ORDER);
 
         $checks = [];
         foreach ($all as $m) {

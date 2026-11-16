@@ -15,6 +15,7 @@ import {
     ArrowRight,
     CheckCircle2,
     Download,
+    ExternalLink,
     FileArchive,
     FileText,
     ListChecks,
@@ -134,6 +135,36 @@ export default function TenderShow({ tender, requirementCounts }: { tender: Tend
                                     />
                                 ))}
                             </ul>
+                            {tender.source.kind === 'feed' && (
+                                <div className="border-primary/30 bg-primary/5 rounded-xl border p-4 text-sm">
+                                    <p className="font-medium">Picked from {tender.source.feed}</p>
+                                    <p className="text-muted-foreground mt-1 text-xs">
+                                        ProcurPilot read the published notice{docs.length > 1 ? ' and the documents attached to it' : ''}. The full
+                                        tender pack (specification, questionnaire, pricing) is usually on the buyer’s portal behind a free login:
+                                        download it there and drop it in below, so every requirement is found.
+                                    </p>
+                                    <div className="mt-2 flex flex-wrap gap-3 text-xs font-medium">
+                                        <a
+                                            href={tender.source.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="text-primary inline-flex items-center gap-1 hover:underline"
+                                        >
+                                            View the notice <ExternalLink className="size-3" />
+                                        </a>
+                                        {tender.portalUrl && (
+                                            <a
+                                                href={tender.portalUrl}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="text-primary inline-flex items-center gap-1 hover:underline"
+                                            >
+                                                Open the buyer’s portal <ExternalLink className="size-3" />
+                                            </a>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                             {editable &&
                                 (adding ? (
                                     <p className="text-muted-foreground flex items-center gap-2 rounded-xl border border-dashed px-4 py-5 text-sm">

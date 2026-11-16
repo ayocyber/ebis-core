@@ -66,22 +66,31 @@ export default function TendersIndex({ tenders }: { tenders: Tender[] }) {
 
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
                     <TenderDropzone disabled={!canEdit(role)} onFiles={setNewFiles} />
-                    <div className="bg-card flex flex-col justify-between gap-4 rounded-xl border p-4 shadow-xs">
+                    <Link
+                        href={route('opportunities.index')}
+                        className="group bg-card hover:border-primary/40 flex flex-col justify-between gap-4 rounded-xl border p-4 shadow-xs transition-colors"
+                    >
                         <div>
                             <p className="flex items-center gap-2 text-sm font-medium">
-                                <Radio className="text-brand-accent size-4" /> Public feeds
+                                <Radio className="text-brand-accent size-4" /> Find tenders
                             </p>
-                            <p className="text-muted-foreground mt-1 text-xs">Coming soon: new tenders matching your profile, pulled in daily.</p>
+                            <p className="text-muted-foreground mt-1 text-xs">
+                                Open UK tenders matched to your company, updated hourly. Pick one and it is added here without uploading.
+                            </p>
                         </div>
                         <ul className="space-y-2 text-sm">
-                            {['Find a Tender', 'Contracts Finder', 'Public Contracts Scotland'].map((feed) => (
+                            {['Find a Tender', 'Contracts Finder'].map((feed) => (
                                 <li key={feed} className="flex items-center justify-between">
                                     <span>{feed}</span>
-                                    <span className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[10px] font-medium">Soon</span>
+                                    <span className="bg-status-met/10 text-status-met rounded-full px-2 py-0.5 text-[10px] font-medium">Live</span>
                                 </li>
                             ))}
                         </ul>
-                    </div>
+                        <span className="text-primary inline-flex items-center gap-1 text-sm font-medium">
+                            Browse open tenders{' '}
+                            <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        </span>
+                    </Link>
                 </div>
 
                 <NewTenderDialog files={newFiles} onOpenChange={(open) => !open && setNewFiles(null)} />

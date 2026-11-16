@@ -71,6 +71,8 @@ export interface Tender {
     summary: string;
     buyer: Buyer;
     source: { kind: 'upload' } | { kind: 'feed'; feed: string; url: string };
+    /** The buyer's own portal, for tenders picked from the public feeds */
+    portalUrl?: string | null;
     publishedAt: ISODate;
     clarificationDeadline?: ISODate;
     deadline: ISODate;

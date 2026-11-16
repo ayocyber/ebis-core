@@ -36,6 +36,7 @@ use Illuminate\Support\Facades\DB;
  * @property list<string> $social_value
  * @property string|null $about
  * @property int|null $updated_by
+ * @property list<string>|null $tender_keywords Words that pick out tenders for this company
  * @property array{found: bool, checkedAt: string, number: string, name?: string, status?: string, incorporatedOn?: string|null, address?: string, nameMatches?: bool, dateMatches?: bool, active?: bool}|null $companies_house Last Companies House check
  */
 class CompanyProfile extends Model
@@ -84,6 +85,7 @@ class CompanyProfile extends Model
             'insurance' => 'array',
             'social_value' => 'array',
             'companies_house' => 'array',
+            'tender_keywords' => 'array',
         ];
     }
 

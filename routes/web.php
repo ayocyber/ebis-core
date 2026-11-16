@@ -9,6 +9,7 @@ use App\Http\Controllers\CompanyProfileController;
 use App\Http\Controllers\EligibilityController;
 use App\Http\Controllers\GapDecisionController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\OpportunityController;
 use App\Http\Controllers\RequirementController;
 use App\Http\Controllers\TenantSwitchController;
 use App\Http\Controllers\TenderController;
@@ -95,6 +96,10 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     // M2: tender intake. Real tenders have UUIDs; the sample tenders (tnd-001…) keep
     // the stage pages below, which still run on sample data.
     Route::get('tenders', [TenderController::class, 'index'])->name('tenders.index');
+    // Open tenders from Find a Tender and Contracts Finder.
+    Route::get('tenders/find', [OpportunityController::class, 'index'])->name('opportunities.index');
+    Route::put('tenders/find/keywords', [OpportunityController::class, 'keywords'])->name('opportunities.keywords');
+    Route::post('tenders/find/{opportunity}/bid', [OpportunityController::class, 'bid'])->whereUuid('opportunity')->name('opportunities.bid');
     Route::post('tenders', [TenderController::class, 'store'])->name('tenders.store');
     Route::get('tenders/{tender}', [TenderController::class, 'show'])->whereUuid('tender')->name('tenders.show');
     Route::patch('tenders/{tender}', [TenderController::class, 'update'])->whereUuid('tender')->name('tenders.update');
@@ -163,7 +168,7 @@ Route::middleware(['auth', 'tenant'])->group(function () {
         ->whereUuid('tender')->name('tenders.signoff.destroy');
 
     // Stage pages. Sample tenders (tnd-001…) show the preview built on sample data.
-    // Real tenders (UUIDs) use the real page where one exists, otherwise their tender page.
+    // Real tenders (UUIDs) use the real page.
     $real = [
         'requirements' => [RequirementController::class, 'index'],
         'eligibility' => [EligibilityController::class, 'index'],
@@ -174,12 +179,10 @@ Route::middleware(['auth', 'tenant'])->group(function () {
         'documents' => [ChecklistController::class, 'index'],
         'validation' => [ValidationController::class, 'index'],
     ];
-    foreach (['eligibility', 'gaps', 'decision', 'compliance', 'bid', 'requirements', 'documents', 'validation'] as $stage) {
-        Route::get("tenders/{tender}/{$stage}", function (string $tender) use ($stage, $real) {
+    foreach ($real as $stage => [$controller, $method]) {
+        Route::get("tenders/{tender}/{$stage}", function (string $tender) use ($stage, $controller, $method) {
             if (Str::isUuid($tender)) {
-                return isset($real[$stage])
-                    ? app()->call([app($real[$stage][0]), $real[$stage][1]], ['tender' => $tender])
-                    : to_route('tenders.show', $tender);
+                return app()->call([app($controller), $method], ['tender' => $tender]);
             }
 
             return Inertia::render("tenders/{$stage}", ['tenderId' => $tender]);

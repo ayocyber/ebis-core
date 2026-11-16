@@ -3,13 +3,18 @@ import { NavUser } from '@/components/nav-user';
 import { TenantSwitcher } from '@/components/tenant-switcher';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
-import { Building2, FileSearch, FolderLock, History, LayoutGrid, Users } from 'lucide-react';
+import { Building2, FileSearch, FolderLock, History, LayoutGrid, Radar, Users } from 'lucide-react';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         url: '/dashboard',
         icon: LayoutGrid,
+    },
+    {
+        title: 'Find tenders',
+        url: '/tenders/find',
+        icon: Radar,
     },
     {
         title: 'Tenders',

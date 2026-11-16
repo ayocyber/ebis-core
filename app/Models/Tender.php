@@ -53,7 +53,7 @@ class Tender extends Model
     protected $fillable = [
         'title', 'reference', 'summary', 'buyer_name', 'buyer_type', 'buyer_location', 'sector',
         'published_at', 'clarification_deadline', 'deadline', 'estimated_value', 'currency', 'lots',
-        'stage', 'version', 'created_by', 'signed_off_at', 'signed_off_by',
+        'stage', 'version', 'created_by', 'signed_off_at', 'signed_off_by', 'source_url', 'portal_url',
     ];
 
     protected function casts(): array
@@ -123,7 +123,11 @@ class Tender extends Model
                 'type' => $this->buyer_type->value,
                 'location' => $this->buyer_location ?? '',
             ],
-            'source' => ['kind' => 'upload'],
+            'source' => $this->source_url !== null
+                ? ['kind' => 'feed', 'feed' => str_contains($this->source_url, 'contractsfinder') ? 'Contracts Finder' : 'Find a Tender', 'url' => $this->source_url]
+                : ['kind' => 'upload'],
+            // The buyer's own portal, where the full documents are when they couldn't be fetched.
+            'portalUrl' => $this->portal_url,
             'publishedAt' => ($this->published_at ?? $this->created_at)->toIso8601ZuluString(),
             'clarificationDeadline' => $this->clarification_deadline?->toIso8601ZuluString(),
             'deadline' => $this->deadline->toIso8601ZuluString(),

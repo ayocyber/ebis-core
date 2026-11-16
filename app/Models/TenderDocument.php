@@ -96,6 +96,7 @@ class TenderDocument extends Model
         $name = strtolower(pathinfo($fileName, PATHINFO_FILENAME));
 
         return match (true) {
+            (bool) preg_match('/^(tender|contract) notice\b/', $name) => 'Published notice',
             (bool) preg_match('/\b(itt|invitation|instructions?)\b/', $name) => 'Invitation to tender',
             (bool) preg_match('/\b(spec|specification|requirements?|sow|scope)\b/', $name) => 'Specification',
             (bool) preg_match('/\b(pric(e|ing)|cost|commercial)\b/', $name) => 'Pricing schedule',

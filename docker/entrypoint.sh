@@ -28,4 +28,7 @@ chown -R www-data:www-data storage bootstrap/cache
 # container. It only runs while the instance is awake.
 su -s /bin/sh www-data -c "php artisan schedule:work" > /proc/1/fd/1 2>&1 &
 
+# Fresh tenders straight after waking up, without delaying the start.
+su -s /bin/sh www-data -c "php artisan tenders:fetch-opportunities" > /proc/1/fd/1 2>&1 &
+
 exec apache2-foreground
