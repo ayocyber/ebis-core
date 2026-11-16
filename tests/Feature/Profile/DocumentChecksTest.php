@@ -210,3 +210,33 @@ it('lets viewers see the result but not run checks', function () {
     $doc = forTheCompany($this->tenant, fn () => VaultDocument::factory()->create());
     $this->post("/vault/documents/{$doc->id}/check")->assertForbidden();
 });
+
+it('reads a file before it is saved, to fill in the upload form', function () {
+    $pdf = TenderFiles::pdf('scan_0042.pdf', [
+        'Certificate of Employers Liability Insurance. Policyholder: Bluewave Networks Limited. Insurer: Acme Mutual plc. '
+        .'Policy number: EL-4471902. Limit of indemnity: GBP 10,000,000 any one occurrence. Expiry date: 30 June 2027.',
+    ]);
+
+    $this->postJson('/vault/read', ['file' => $pdf])->assertOk()->assertExactJson([
+        'readable' => true,
+        'kind' => 'el',
+        'issuer' => 'Acme Mutual plc',
+        'reference' => 'EL-4471902',
+        'expires_at' => '2027-06-30',
+        'fact' => 'Cover: £10,000,000 any one occurrence',
+    ]);
+
+    // Nothing is stored.
+    expect(forTheCompany($this->tenant, fn () => VaultDocument::count()))->toBe(0);
+});
+
+it('reads a wrong file for what it is, whatever its name', function () {
+    $pdf = TenderFiles::pdf('Employers liability.pdf', ['Curriculum Vitae - Sarah Whitfield. Project manager with ten years of experience.']);
+
+    $this->postJson('/vault/read', ['file' => $pdf])->assertOk()->assertJson(['readable' => true, 'kind' => 'cv', 'expires_at' => null]);
+});
+
+it('says a scan has no text instead of guessing', function () {
+    $this->postJson('/vault/read', ['file' => TenderFiles::pdf('scan.pdf', [''])])
+        ->assertOk()->assertJson(['readable' => false, 'kind' => null]);
+});

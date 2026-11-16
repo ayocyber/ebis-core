@@ -180,7 +180,7 @@ class DocumentChecker
         return collect($formats)->contains(fn (string $f) => str_contains($plain, strtolower($date->format($f))));
     }
 
-    private static function expiryInText(string $text): ?Carbon
+    public static function expiryInText(string $text): ?Carbon
     {
         $date = '(\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]{3,9}\s+\d{4}|\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{4}|\d{4}-\d{2}-\d{2})';
         if (! preg_match('/'.self::EXPIRY_WORDS.'\s*:?\s*'.$date.'/i', $text, $m)) {

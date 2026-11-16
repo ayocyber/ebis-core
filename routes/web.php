@@ -76,6 +76,7 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     // M1: evidence vault, company profile and activity log.
     Route::get('vault', [VaultDocumentController::class, 'index'])->name('vault.index');
     Route::post('vault/documents', [VaultDocumentController::class, 'store'])->name('vault.store');
+    Route::post('vault/read', [VaultDocumentController::class, 'read'])->name('vault.read');
     Route::get('vault/documents/{document}/download', [VaultDocumentController::class, 'download'])
         ->whereUuid('document')->name('vault.download');
     Route::delete('vault/documents/{document}', [VaultDocumentController::class, 'destroy'])

@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Vault\StoreVaultDocumentRequest;
 use App\Models\User;
 use App\Models\VaultDocument;
+use App\Support\Vault\DocumentReader;
 use App\Support\Vault\VaultUploader;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -32,6 +35,22 @@ class VaultDocumentController extends Controller
         $doc = $uploader->store($request->file('file'), $request->safe()->except('file'), $user);
 
         return back()->with('success', "{$doc->title} saved to the vault.".self::checkSummary($doc));
+    }
+
+    /**
+     * Reads a file before it is saved, to fill in the upload form from its text.
+     * Nothing is stored.
+     */
+    public function read(Request $request, DocumentReader $reader): JsonResponse
+    {
+        Gate::authorize('edit-tenant-data');
+        $request->validate([
+            'file' => ['required', 'file', 'max:'.VaultDocument::MAX_KB, 'extensions:'.implode(',', VaultDocument::EXTENSIONS)],
+        ]);
+        /** @var UploadedFile $file */
+        $file = $request->file('file');
+
+        return response()->json($reader->read((string) $file->getRealPath(), strtolower($file->getClientOriginalExtension())));
     }
 
     /** Read the document again, e.g. after correcting its details or the company profile. */

@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, Sele
 import { classify, type EvidenceSlot, evidenceSlots } from '@/data/evidence-slots';
 import { firstError, saveDocument } from '@/hooks/use-vault';
 import { formatBytes } from '@/lib/ebis';
+import { type DocumentReading, foundFields, readDocument, slotFor } from '@/lib/read-document';
 import { cn } from '@/lib/utils';
 import { vaultCategoryMeta, vaultCategoryOrder } from '@/lib/vault';
 import { type SharedData } from '@/types';
@@ -22,8 +23,12 @@ interface Item {
     file: File;
     fileName: string;
     size: number;
-    phase: 'review' | 'saving';
+    phase: 'reading' | 'review' | 'saving';
     error?: string;
+    /** What the server read from the file; null when it couldn't be reached */
+    reading?: DocumentReading | null;
+    /** How the type was chosen: from the text, from the file name, or by the user */
+    typeFrom?: 'text' | 'name' | 'user';
     issuer: string;
     reference: string;
     expiresAt: string;
@@ -103,14 +108,15 @@ export default function OnboardingEvidence() {
                 rejected.push(f.name);
                 continue;
             }
-            const slot = forcedSlot ? evidenceSlots.find((s) => s.id === forcedSlot) : classify(f.name);
+            const slot = forcedSlot ? evidenceSlots.find((s) => s.id === forcedSlot) : undefined;
             added.push({
                 id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
                 slotId: forcedSlot === OTHER ? OTHER : slot?.id,
+                typeFrom: forcedSlot ? 'user' : undefined,
                 file: f,
                 fileName: f.name,
                 size: f.size,
-                phase: 'review',
+                phase: 'reading',
                 ...suggestionFor(slot),
                 customTitle: forcedSlot === OTHER ? prettyName(f.name) : '',
             });
@@ -119,6 +125,33 @@ export default function OnboardingEvidence() {
         if (!added.length) return;
         setItems((list) => [...list, ...added]);
         if (forcedSlot) setNotHeld((n) => n.filter((x) => x !== forcedSlot));
+
+        // Read each file's text and fill in what it says. The type comes from the
+        // text; the file name is only a fallback when the text doesn't tell.
+        for (const item of added) {
+            void readDocument(item.file).then((r) => {
+                setItems((list) =>
+                    list.map((i) => {
+                        if (i.id !== item.id || i.phase !== 'reading') return i;
+                        const fromText = slotFor(r?.kind);
+                        const fromName = classify(i.fileName);
+                        const keepUser = i.typeFrom === 'user';
+                        const slot = keepUser ? evidenceSlots.find((s) => s.id === i.slotId) : (fromText ?? fromName);
+                        return {
+                            ...i,
+                            phase: 'review',
+                            reading: r,
+                            slotId: keepUser ? i.slotId : slot?.id,
+                            typeFrom: keepUser ? 'user' : fromText ? 'text' : fromName ? 'name' : undefined,
+                            issuer: r?.issuer || i.issuer || (slot && FIXED_ISSUER[slot.id]) || '',
+                            reference: r?.reference || i.reference,
+                            expiresAt: r?.expires_at || i.expiresAt,
+                            fact: r?.fact || i.fact,
+                        };
+                    }),
+                );
+            });
+        }
     };
 
     const confirm = (item: Item) => {
@@ -200,8 +233,8 @@ export default function OnboardingEvidence() {
                             </span>
                             <span className="text-lg font-semibold">Drop everything at once</span>
                             <span className="text-muted-foreground max-w-md text-sm">
-                                Certificates, insurance schedules, accounts, case studies, CVs. ProcurPilot sorts them by file name; you add the key
-                                details. PDF, Word or images, up to 25 MB each.
+                                Certificates, insurance schedules, accounts, case studies, CVs. ProcurPilot reads each one and fills in what it finds;
+                                you check it. PDF, Word or images, up to 25 MB each.
                             </span>
                         </button>
                         <input
@@ -234,7 +267,8 @@ export default function OnboardingEvidence() {
                                         <ScanText className="text-primary size-4" /> Add the details
                                     </h2>
                                     <p className="text-muted-foreground text-xs">
-                                        Copy them from each document, especially expiry dates. Nothing is saved until you confirm it.
+                                        Filled in from each document’s text where it could be read. Check them, especially expiry dates. Nothing is
+                                        saved until you confirm it.
                                     </p>
                                 </div>
                                 {pending.filter(canConfirm).length > 1 && (
@@ -430,18 +464,24 @@ function ReviewRow({
         <li className="animate-fade-up space-y-3 px-5 py-4">
             <div className="flex items-center gap-3">
                 <span className="bg-muted flex size-9 shrink-0 items-center justify-center rounded-lg">
-                    {item.phase === 'saving' ? <Loader2 className="text-primary size-4 animate-spin" /> : <FileUp className="text-primary size-4" />}
+                    {item.phase !== 'review' ? <Loader2 className="text-primary size-4 animate-spin" /> : <FileUp className="text-primary size-4" />}
                 </span>
                 <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{item.fileName}</p>
                     <p className="text-muted-foreground text-xs">
-                        {item.phase === 'saving'
-                            ? 'Saving to your vault…'
-                            : slot
-                              ? `Looks like: ${slot.title}`
+                        {item.phase === 'reading'
+                            ? 'Reading the document…'
+                            : item.phase === 'saving'
+                              ? 'Saving to your vault…'
                               : other
                                 ? 'Your own document'
-                                : 'Not one ProcurPilot recognises. Choose a type, or “Something else”'}{' '}
+                                : slot && item.typeFrom === 'text'
+                                  ? `Read from the document: ${slot.title}`
+                                  : slot && item.typeFrom === 'name'
+                                    ? `Guessed from the file name: ${slot.title}. Check the type.`
+                                    : slot
+                                      ? slot.title
+                                      : 'Not one ProcurPilot recognises. Choose a type, or “Something else”'}{' '}
                         · {formatBytes(item.size)}
                     </p>
                 </div>
@@ -454,6 +494,8 @@ function ReviewRow({
                 </button>
             </div>
 
+            {item.phase === 'review' && <ReadingNote item={item} slot={slot} />}
+
             {item.phase === 'review' && (
                 <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1 sm:col-span-2">
@@ -462,9 +504,11 @@ function ReviewRow({
                             value={item.slotId ?? ''}
                             onValueChange={(v) => {
                                 const s = evidenceSlots.find((x) => x.id === v);
+                                // Keep what was read from the document; only fill gaps.
                                 onChange({
                                     slotId: v,
-                                    ...suggestionFor(s),
+                                    typeFrom: 'user',
+                                    issuer: item.reading?.issuer || suggestionFor(s).issuer,
                                     customTitle: v === OTHER && !item.customTitle ? prettyName(item.fileName) : item.customTitle,
                                 });
                             }}
@@ -560,6 +604,40 @@ function ReviewRow({
                 </div>
             )}
         </li>
+    );
+}
+
+/** What was read from the file, and a warning when the text says it is a different document. */
+function ReadingNote({ item, slot }: { item: Item; slot: EvidenceSlot | undefined }) {
+    const r = item.reading;
+    const ext = item.fileName.split('.').pop()?.toLowerCase() ?? '';
+    const readAs = slotFor(r?.kind);
+    if (readAs && slot && readAs.id !== slot.id) {
+        return (
+            <p role="alert" className="border-status-partial/40 bg-status-partial/10 text-status-partial rounded-lg border px-3 py-2 text-xs">
+                The text reads like <b>{readAs.title}</b>, not {slot.title}. Is it the right file?
+            </p>
+        );
+    }
+    if (!r) {
+        return <p className="text-muted-foreground text-xs">The document couldn’t be read just now. Type the details from it.</p>;
+    }
+    if (!r.readable) {
+        return (
+            <p className="text-muted-foreground text-xs">
+                {['png', 'jpg', 'jpeg'].includes(ext) ? 'This is an image' : 'This looks like a scan'}, so there is no text to read. Type the details
+                from it.
+            </p>
+        );
+    }
+    const found = foundFields(r);
+    return (
+        <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+            <ScanText className="text-primary size-3.5 shrink-0" />
+            {found.length
+                ? `Filled in from the document: ${found.join(', ')}. Check them against it.`
+                : 'Read the document, but found no dates or numbers to fill in. Add any it has.'}
+        </p>
     );
 }
 

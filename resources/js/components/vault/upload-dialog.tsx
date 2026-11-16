@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { setGapStatusFor } from '@/hooks/use-tender-workspace';
 import { firstError, saveDocument } from '@/hooks/use-vault';
 import { formatBytes, formatDate } from '@/lib/ebis';
+import { type DocumentReading, foundFields, readDocument, slotFor } from '@/lib/read-document';
 import { cn } from '@/lib/utils';
 import { type DocUsage, vaultCategoryMeta, vaultCategoryOrder } from '@/lib/vault';
 import type { MissingEvidence, Tender, VaultCategory, VaultDocument } from '@/types/ebis';
@@ -77,10 +78,24 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
         if (f.size > MAX) return setError(`That file is ${formatBytes(f.size)}. The limit is 25 MB.`);
         setError(null);
         setFile(f);
-        if (!form.title) set({ title: f.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ') });
-        // The user copies the details from the document; there is no automatic reading yet.
+        setReading(undefined);
         setStep('details');
+        // Fill in what the document's text says; the title stays as given when the upload is for a known slot.
+        const fixedTitle = !!form.title;
+        void readDocument(f).then((r) => {
+            setReading(r);
+            const slot = slotFor(r?.kind);
+            setForm((cur) => ({
+                ...cur,
+                title: fixedTitle ? cur.title : cur.title || slot?.title || f.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' '),
+                category: fixedTitle || !slot ? cur.category : slot.category,
+                issuer: cur.issuer || r?.issuer || '',
+                reference: cur.reference || r?.reference || '',
+                expiresAt: cur.expiresAt || r?.expires_at || '',
+            }));
+        });
     };
+    const [reading, setReading] = useState<DocumentReading | null | undefined>(undefined);
 
     const [saving, setSaving] = useState(false);
 
@@ -249,7 +264,20 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
                         <FileUp className="text-primary size-5 shrink-0" />
                         <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium">{file.name}</p>
-                            <p className="text-muted-foreground text-xs">{formatBytes(file.size)} · add its details below</p>
+                            <p className="text-muted-foreground text-xs">
+                                {formatBytes(file.size)} ·{' '}
+                                {reading === undefined
+                                    ? 'reading the document…'
+                                    : !reading
+                                      ? 'couldn’t be read just now; add its details below'
+                                      : !reading.readable
+                                        ? 'no text to read (a scan or image); add its details below'
+                                        : foundFields(reading).filter((x) => x !== 'cover').length
+                                          ? `filled in from the document: ${foundFields(reading)
+                                                .filter((x) => x !== 'cover')
+                                                .join(', ')}. Check them.`
+                                          : 'read, but no dates or numbers found; add its details below'}
+                            </p>
                         </div>
                         <button type="button" onClick={() => setStep('pick')} className="text-primary text-xs font-medium hover:underline">
                             Change
