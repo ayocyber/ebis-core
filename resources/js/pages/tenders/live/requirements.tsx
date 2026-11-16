@@ -11,7 +11,21 @@ import { cn } from '@/lib/utils';
 import { type SharedData } from '@/types';
 import type { Requirement, RequirementCategory, Tender } from '@/types/ebis';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ArrowLeft, Check, CheckCheck, FileSearch, FileText, ListChecks, Pencil, Plus, Scale, Trash2, X } from 'lucide-react';
+import {
+    ArrowLeft,
+    Check,
+    CheckCheck,
+    ExternalLink,
+    FileSearch,
+    FileText,
+    ListChecks,
+    PackageOpen,
+    Pencil,
+    Plus,
+    Scale,
+    Trash2,
+    X,
+} from 'lucide-react';
 import { useState } from 'react';
 
 const order: RequirementCategory[] = ['mandatory', 'scored', 'informational'];
@@ -63,6 +77,37 @@ export default function LiveRequirements({
                         </>
                     }
                 />
+
+                {/* Picked from the public feeds and nothing added since: only the notice has been read. */}
+                {tender.source.kind === 'feed' && tender.documents.length <= 1 && (
+                    <section className="border-status-partial/40 bg-status-partial/5 animate-fade-up rounded-2xl border p-5">
+                        <h2 className="flex items-center gap-2 font-semibold tracking-tight">
+                            <PackageOpen className="text-status-partial size-4" /> Only the published notice has been read
+                        </h2>
+                        <p className="text-muted-foreground mt-1 max-w-3xl text-sm">
+                            Buyers put the real requirements (turnover, insurance, certificates, method statements) in the tender pack, not in the
+                            notice. Get the pack from the buyer’s portal (a free supplier login), then add it on the Documents page. ProcurPilot will
+                            read it and suggest the requirements here.
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            {tender.portalUrl && (
+                                <Button size="sm" asChild>
+                                    <a href={tender.portalUrl} target="_blank" rel="noreferrer">
+                                        Open the buyer’s portal <ExternalLink className="size-3.5" />
+                                    </a>
+                                </Button>
+                            )}
+                            <Button size="sm" variant="outline" asChild>
+                                <a href={tender.source.url} target="_blank" rel="noreferrer">
+                                    View the notice <ExternalLink className="size-3.5" />
+                                </a>
+                            </Button>
+                            <Button size="sm" variant="outline" asChild>
+                                <Link href={route('tenders.show', tender.id)}>Add the tender pack</Link>
+                            </Button>
+                        </div>
+                    </section>
+                )}
 
                 {/* Suggestions found in the text */}
                 {suggestions.length > 0 && (

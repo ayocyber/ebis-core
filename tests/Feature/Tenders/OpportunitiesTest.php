@@ -199,3 +199,13 @@ it('lets viewers browse but not start a bid or change the search words', functio
     $this->actingAs($viewer)->post('/tenders/find/'.Opportunity::sole()->id.'/bid')->assertForbidden();
     $this->actingAs($viewer)->put('/tenders/find/keywords', ['keywords' => ['network']])->assertForbidden();
 });
+
+it('does not suggest a notice line that only points to the tender pack', function () {
+    fakeFeeds([release(['selectionCriteria' => ['criteria' => [['description' => 'As detailed in the quotation pack.', 'minimum' => null]]], 'lots' => []])]);
+    app(OpportunityFeed::class)->fetch();
+
+    expect(Opportunity::sole()->selection)->toBe([]);
+
+    $this->post('/tenders/find/'.Opportunity::sole()->id.'/bid')->assertRedirect();
+    withinCompany($this->tenant, fn () => expect(Requirement::pluck('text')->implode(' '))->not->toContain('quotation pack'));
+});

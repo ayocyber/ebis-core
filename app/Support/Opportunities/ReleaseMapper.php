@@ -163,7 +163,7 @@ class ReleaseMapper
             foreach ($set['criteria'] ?? [] as $c) {
                 foreach ([$c['description'] ?? null, $c['minimum'] ?? null] as $text) {
                     $text = trim((string) $text);
-                    if (mb_strlen($text) >= 15 && ! preg_match('/^please refer to/i', $text)) {
+                    if (mb_strlen($text) >= 15 && ! self::onlyPointsElsewhere($text)) {
                         $out[md5($text)] = Str::limit($text, 3000);
                     }
                 }
@@ -174,6 +174,13 @@ class ReleaseMapper
         }
 
         return array_values($out);
+    }
+
+    /** "As detailed in the quotation pack", "Please refer to the ITT": says nothing itself. */
+    public static function onlyPointsElsewhere(string $text): bool
+    {
+        return mb_strlen($text) < 160
+            && (bool) preg_match('/^\W*(please\s+)?(refer\s+to|see|as\s+(detailed|set\s+out|described|stated|specified|outlined)\s+in|as\s+per|in\s+accordance\s+with|details?\s+(are\s+)?(in|within)|refer)\b/i', $text);
     }
 
     /** @param array<string, mixed> $r */

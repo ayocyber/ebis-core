@@ -105,9 +105,10 @@ class OpportunityTenders
             }
         }
 
-        if ($o->selection) {
+        $selection = array_values(array_filter($o->selection ?? [], fn (string $s) => ! ReleaseMapper::onlyPointsElsewhere($s)));
+        if ($selection !== []) {
             $lines[] = '2. Selection criteria';
-            foreach ($o->selection as $i => $text) {
+            foreach ($selection as $i => $text) {
                 $lines[] = '2.'.($i + 1).' '.self::readableMoney((string) preg_replace('/\s+/', ' ', $text));
             }
         }
