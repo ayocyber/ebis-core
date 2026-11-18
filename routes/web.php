@@ -158,6 +158,8 @@ Route::middleware(['auth', 'tenant'])->group(function () {
         ->whereUuid(['tender', 'item'])->name('tenders.checklist.upload');
     Route::get('tenders/{tender}/checklist/{item}/file', [ChecklistController::class, 'download'])
         ->whereUuid(['tender', 'item'])->name('tenders.checklist.download');
+    Route::post('tenders/{tender}/checklist/{item}/form', [ChecklistController::class, 'form'])
+        ->whereUuid(['tender', 'item'])->name('tenders.checklist.form');
 
     // Readiness and sign-off of a real tender (M7).
     Route::post('tenders/{tender}/readiness', [ValidationController::class, 'record'])
@@ -166,6 +168,8 @@ Route::middleware(['auth', 'tenant'])->group(function () {
         ->whereUuid('tender')->name('tenders.signoff.store');
     Route::delete('tenders/{tender}/signoff', [ValidationController::class, 'undoSignOff'])
         ->whereUuid('tender')->name('tenders.signoff.destroy');
+    Route::get('tenders/{tender}/pack', [ValidationController::class, 'pack'])
+        ->whereUuid('tender')->name('tenders.pack');
 
     // Stage pages. Sample tenders (tnd-001…) show the preview built on sample data.
     // Real tenders (UUIDs) use the real page.

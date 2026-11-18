@@ -1,5 +1,6 @@
 import { useVault } from '@/hooks/use-vault';
-import { resolveChecklist } from '@/lib/checklist';
+import { exportName, resolveChecklist } from '@/lib/checklist';
+import { downloadPost } from '@/lib/http';
 import { DocumentsScreen } from '@/pages/tenders/documents';
 import { type SharedData } from '@/types';
 import type { BidSection, ChecklistItem, ChecklistProgress, Tender } from '@/types/ebis';
@@ -49,6 +50,12 @@ export default function LiveDocuments({
                 router.post(route('tenders.checklist.upload', [tender.id, itemId]), { file }, { forceFormData: true, preserveScroll: true })
             }
             fileHref={(itemId) => (files.includes(itemId) ? route('tenders.checklist.download', [tender.id, itemId]) : undefined)}
+            packHref={route('tenders.pack', tender.id)}
+            onDownloadForm={(itemId, fields) => {
+                const item = items.find((i) => i.id === itemId);
+                const name = item ? exportName(item, tender, supplier).replace(/\.\w+$/, '.docx') : 'Form.docx';
+                return downloadPost(route('tenders.checklist.form', [tender.id, itemId]), { fields }, name);
+            }}
         />
     );
 }

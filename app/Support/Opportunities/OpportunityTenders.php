@@ -5,13 +5,13 @@ namespace App\Support\Opportunities;
 use App\Models\Opportunity;
 use App\Models\Tender;
 use App\Models\User;
+use App\Support\Docx;
 use App\Support\Tenders\DuplicateTender;
 use App\Support\Tenders\TenderIntake;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Throwable;
-use ZipArchive;
 
 /**
  * "Bid for this": turns a published opportunity into the company's own tender.
@@ -121,16 +121,11 @@ class OpportunityTenders
         }
 
         $path = $this->tempFile();
-        $zip = new ZipArchive;
-        $zip->open($path, ZipArchive::OVERWRITE);
-        $zip->addFromString('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
-        $zip->addFromString('_rels/.rels', '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
-        $paragraphs = implode('', array_map(
-            fn (string $p) => '<w:p><w:r><w:t xml:space="preserve">'.htmlspecialchars($p, ENT_XML1 | ENT_QUOTES, 'UTF-8').'</w:t></w:r></w:p>',
-            $lines,
-        ));
-        $zip->addFromString('word/document.xml', '<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'.$paragraphs.'</w:body></w:document>');
-        $zip->close();
+        $docx = new Docx;
+        foreach ($lines as $line) {
+            $docx->paragraph($line);
+        }
+        $docx->save($path);
 
         return new UploadedFile($path, "Tender notice - {$o->sourceName()}.docx", 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', null, true);
     }

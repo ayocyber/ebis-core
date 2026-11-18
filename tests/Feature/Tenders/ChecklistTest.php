@@ -2,6 +2,7 @@
 
 use App\Enums\TenantRole;
 use App\Models\AuditEvent;
+use App\Models\BidSection;
 use App\Models\ChecklistItem;
 use App\Models\CompanyProfile;
 use App\Models\Gap;
@@ -9,6 +10,7 @@ use App\Models\Requirement;
 use App\Models\Tenant;
 use App\Models\Tender;
 use App\Models\User;
+use App\Models\VaultDocument;
 use App\Support\Tenancy\CurrentTenant;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -167,4 +169,93 @@ it('lets viewers look but not change anything, and keeps other companies out', f
     Tenant::factory()->ownedBy($rival)->create();
     $this->actingAs($rival)->get("/tenders/{$this->tender->id}/documents")->assertNotFound();
     $this->get("/tenders/{$this->tender->id}/checklist/{$pricing->id}/file")->assertNotFound();
+});
+
+/** @return array<string, string> entry name => contents */
+function packEntries(string $zipBytes): array
+{
+    $path = tempnam(sys_get_temp_dir(), 'test');
+    file_put_contents($path, $zipBytes);
+    $zip = new ZipArchive;
+    $zip->open($path);
+    $entries = [];
+    for ($i = 0; $i < $zip->numFiles; $i++) {
+        $name = (string) $zip->getNameIndex($i);
+        $entries[$name] = (string) $zip->getFromIndex($i);
+    }
+    $zip->close();
+    unlink($path);
+
+    return $entries;
+}
+
+function docxText(string $docx): string
+{
+    return strip_tags(str_replace('</w:p>', "\n", (string) (packEntries($docx)['word/document.xml'] ?? '')));
+}
+
+it('downloads the submission pack with every file under the buyer’s naming, and lists what is missing', function () {
+    $this->tenant->forceFill(['name' => 'Bluewave Networks'])->save();
+    $this->tender->forceFill(['reference' => 'ECC-NET-2026-01'])->save();
+    decideToProceed($this);
+    $this->get("/tenders/{$this->tender->id}/documents");
+
+    inThisCompany($this->tenant, function () {
+        BidSection::where('tender_id', $this->tender->id)->orderBy('position')->first()
+            ->forceFill(['title' => 'Approach', 'body' => "We run the network from two sites.\n\nEngineers are on call all day."])->save();
+        Storage::disk('local')->put('tenants/test/vault/iso.pdf', '%PDF iso');
+        VaultDocument::factory()->create(['title' => 'ISO 9001:2015 certificate', 'path' => 'tenants/test/vault/iso.pdf']);
+    });
+    $pricing = checklistItem($this->tenant, 'Completed pricing schedule');
+    $this->post("/tenders/{$this->tender->id}/checklist/{$pricing->id}/file", ['file' => UploadedFile::fake()->createWithContent('my prices.xlsx', 'prices')]);
+    $declaration = checklistItem($this->tenant, 'Completed Appendix B - Declaration form');
+    $this->patch("/tenders/{$this->tender->id}/checklist/{$declaration->id}", ['progress' => ['notApplicable' => true]]);
+
+    $response = $this->get("/tenders/{$this->tender->id}/pack")->assertOk()->assertDownload('ECC-NET-2026-01_Bluewave-Networks_SubmissionPack.zip');
+    $entries = packEntries($response->streamedContent() ?: file_get_contents($response->baseResponse->getFile()->getPathname()));
+    $names = array_keys($entries);
+    $prefix = 'ECC-NET-2026-01_Bluewave-Networks_';
+
+    expect($names)->toContain('00_Contents.txt')
+        ->and(collect($names)->filter(fn ($n) => str_ends_with($n, '.xlsx'))->first())->toStartWith($prefix)
+        ->and($entries[collect($names)->first(fn ($n) => str_ends_with($n, '.xlsx'))])->toBe('prices')
+        ->and($entries[collect($names)->first(fn ($n) => str_contains($n, 'ISO'))])->toBe('%PDF iso');
+
+    $response = collect($names)->first(fn ($n) => str_starts_with($n, $prefix) && str_ends_with($n, '.docx') && docxText($entries[$n]) !== '' && str_contains(docxText($entries[$n]), 'Approach'));
+    expect(docxText($entries[$response]))->toContain('We run the network from two sites.')->toContain('Engineers are on call all day.');
+
+    $sq = collect($names)->first(fn ($n) => str_ends_with($n, '.docx') && str_contains(docxText($entries[$n]), 'Selection questionnaire'));
+    expect(docxText($entries[$sq]))->toContain('Bluewave Networks Ltd')->toContain('08412345');
+
+    $contents = $entries['00_Contents.txt'];
+    expect($contents)->toContain('NOT in this pack')
+        ->toContain('Public liability insurance certificate')
+        ->toContain('Audited accounts')
+        ->not->toContain('Declaration form'); // marked not needed
+
+    $log = inThisCompany($this->tenant, fn () => AuditEvent::where('action', 'downloaded the submission pack for')->sole());
+    expect($log->detail)->toBe('4 files, 2 missing');
+});
+
+it('downloads a form filled in with the answers on screen, without saving them', function () {
+    decideToProceed($this);
+    $this->get("/tenders/{$this->tender->id}/documents");
+    $sq = checklistItem($this->tenant, 'Selection questionnaire: supplier information');
+
+    $response = $this->postJson("/tenders/{$this->tender->id}/checklist/{$sq->id}/form", ['fields' => ['contact_email' => 'bids@bluewave.example']])->assertOk();
+    $text = docxText(file_get_contents($response->baseResponse->getFile()->getPathname()));
+    expect($text)->toContain('bids@bluewave.example')->toContain('Bluewave Networks Ltd')
+        ->and($sq->fresh()->progress)->toBeNull();
+
+    $pricing = checklistItem($this->tenant, 'Completed pricing schedule');
+    $this->postJson("/tenders/{$this->tender->id}/checklist/{$pricing->id}/form")->assertNotFound();
+});
+
+it('keeps the pack from other companies and before a decision to bid', function () {
+    $this->get("/tenders/{$this->tender->id}/pack")->assertStatus(409);
+    decideToProceed($this);
+
+    $rival = User::factory()->create();
+    Tenant::factory()->ownedBy($rival)->create();
+    $this->actingAs($rival)->get("/tenders/{$this->tender->id}/pack")->assertNotFound();
 });

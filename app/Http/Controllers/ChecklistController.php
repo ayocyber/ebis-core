@@ -11,6 +11,8 @@ use App\Models\TenderDecision;
 use App\Support\AuditLog;
 use App\Support\Bid\BidWorkspace;
 use App\Support\Bid\ChecklistBuilder;
+use App\Support\Bid\SubmissionPack;
+use App\Support\Docx;
 use App\Support\Tenancy\CurrentTenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +21,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /** M6: the documents checklist of a real tender (BID-02, BID-06). */
@@ -135,6 +138,29 @@ class ChecklistController extends Controller
         abort_if($item->file_path === null || ! Storage::disk((string) $item->file_disk)->exists($item->file_path), 404);
 
         return Storage::disk((string) $item->file_disk)->download($item->file_path, (string) ($item->progress['fileName'] ?? basename($item->file_path)));
+    }
+
+    /**
+     * The form filled in with the answers on screen (saved or not), as a Word
+     * document to sign. Nothing is saved.
+     */
+    public function form(Request $request, string $tender, string $item): BinaryFileResponse
+    {
+        $item = $this->item($tender, $item);
+        abort_if($item->kind !== 'form', 404);
+        $data = $request->validate([
+            'fields' => ['sometimes', 'array'],
+            'fields.*' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $docx = new Docx;
+        SubmissionPack::form($docx, $item, CompanyProfile::first(), $data['fields'] ?? ($item->progress['fields'] ?? []));
+        $path = (string) tempnam(sys_get_temp_dir(), 'form');
+        $docx->save($path);
+        $tender = Tender::findOrFail($item->tender_id);
+        $name = SubmissionPack::slug($tender->reference ?: $tender->title).'_'.SubmissionPack::slug(app(CurrentTenant::class)->require()->name)."_{$item->file_stem}.docx";
+
+        return response()->download($path, $name, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])->deleteFileAfterSend();
     }
 
     private function item(string $tender, string $item): ChecklistItem

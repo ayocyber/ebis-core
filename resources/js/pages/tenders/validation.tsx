@@ -89,6 +89,7 @@ export function ValidationScreen({
     onSignOff,
     onUndoSignOff,
     signOffError,
+    packHref,
 }: {
     tender: Tender;
     rows: EligibilityRow[];
@@ -104,6 +105,8 @@ export function ValidationScreen({
     onSignOff: () => void;
     onUndoSignOff: () => void;
     signOffError?: string;
+    /** Where the submission pack downloads from; sample tenders have none */
+    packHref?: string;
 }) {
     const { role, auth, tenant } = usePage<SharedData>().props;
     const [priority, setPriority] = useState<Priority | null>(null);
@@ -170,6 +173,7 @@ export function ValidationScreen({
                         deadline={tender.deadline}
                         canUndo={isOwner(role)}
                         onUndo={onUndoSignOff}
+                        packHref={packHref}
                     />
                 ) : (
                     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
@@ -468,7 +472,9 @@ function SignedOffState({
     deadline,
     canUndo,
     onUndo,
+    packHref,
 }: {
+    packHref?: string;
     by: string;
     at: string;
     buyer: string;
@@ -514,9 +520,17 @@ function SignedOffState({
                 </ol>
 
                 <div className="mt-8 flex flex-col justify-center gap-2 sm:flex-row">
-                    <Button className="h-11 rounded-full px-6" disabled title="Arrives with the backend">
-                        <Download className="size-4" /> Download submission pack
-                    </Button>
+                    {packHref ? (
+                        <Button asChild className="h-11 rounded-full px-6">
+                            <a href={packHref} download>
+                                <Download className="size-4" /> Download submission pack
+                            </a>
+                        </Button>
+                    ) : (
+                        <Button className="h-11 rounded-full px-6" disabled title="Sample tenders have no files to download">
+                            <Download className="size-4" /> Download submission pack
+                        </Button>
+                    )}
                     <Button asChild variant="outline" className="h-11 rounded-full px-6">
                         <Link href={route('tenders.index')}>Back to tenders</Link>
                     </Button>

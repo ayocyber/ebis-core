@@ -17,6 +17,7 @@ export function FormDialog({
     onOpenChange,
     onSave,
     onUploadFile,
+    onDownload,
 }: {
     entry: ResolvedItem | null;
     userName: string;
@@ -24,6 +25,8 @@ export function FormDialog({
     onSave: (patch: ChecklistProgress) => void;
     /** Real tenders upload the signed copy itself; without this only its name is kept */
     onUploadFile?: (file: File) => void;
+    /** Real tenders: download the form filled in with the answers on screen */
+    onDownload?: (fields: Record<string, string>) => Promise<void>;
 }) {
     return (
         <Dialog open={!!entry} onOpenChange={onOpenChange}>
@@ -35,6 +38,7 @@ export function FormDialog({
                         userName={userName}
                         onSave={onSave}
                         onUploadFile={onUploadFile}
+                        onDownload={onDownload}
                         onCancel={() => onOpenChange(false)}
                     />
                 )}
@@ -48,12 +52,14 @@ function FormBody({
     userName,
     onSave,
     onUploadFile,
+    onDownload,
     onCancel,
 }: {
     entry: ResolvedItem;
     userName: string;
     onSave: (patch: ChecklistProgress) => void;
     onUploadFile?: (file: File) => void;
+    onDownload?: (fields: Record<string, string>) => Promise<void>;
     onCancel: () => void;
 }) {
     const { item, progress } = entry;
@@ -62,6 +68,17 @@ function FormBody({
     const [fileName, setFileName] = useState(progress.fileName);
     const [sizeBytes, setSizeBytes] = useState(progress.sizeBytes);
     const input = useRef<HTMLInputElement>(null);
+    const [downloading, setDownloading] = useState(false);
+    const [downloadError, setDownloadError] = useState(false);
+
+    const download = () => {
+        if (!onDownload) return;
+        setDownloading(true);
+        setDownloadError(false);
+        onDownload(values)
+            .catch(() => setDownloadError(true))
+            .finally(() => setDownloading(false));
+    };
 
     const done = fields.filter((f) => values[f.id]?.trim()).length;
     const complete = done === fields.length;
@@ -129,9 +146,15 @@ function FormBody({
                         <li>Upload the signed copy here.</li>
                     </ol>
                     <div className="flex flex-wrap gap-2">
-                        <Button type="button" variant="outline" size="sm" disabled title="Arrives with the backend">
-                            <Download className="size-4" /> Download completed form
-                            <span className="bg-muted rounded px-1.5 text-[10px]">Soon</span>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={download}
+                            disabled={!onDownload || !complete || downloading}
+                            title={onDownload ? undefined : 'Sample tenders have no form to download'}
+                        >
+                            <Download className="size-4" /> {downloading ? 'Preparing…' : 'Download completed form'}
                         </Button>
                         {fileName ? (
                             <span className="bg-status-met/10 text-status-met flex min-w-0 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium">
@@ -167,7 +190,12 @@ function FormBody({
                             }}
                         />
                     </div>
-                    {!complete && <p className="text-muted-foreground text-xs">Fill in every field before uploading the signed copy.</p>}
+                    {!complete && <p className="text-muted-foreground text-xs">Fill in every field, then download the form to sign.</p>}
+                    {downloadError && (
+                        <p role="alert" className="text-status-not-met text-xs">
+                            The form could not be downloaded. Try again.
+                        </p>
+                    )}
                 </div>
             )}
 

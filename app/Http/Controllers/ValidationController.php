@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Support\AuditLog;
 use App\Support\Bid\BidWorkspace;
 use App\Support\Bid\ChecklistBuilder;
+use App\Support\Bid\SubmissionPack;
 use App\Support\Eligibility\EligibilityRunner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * M7 for real tenders: readiness check (VAL-01…07) and final sign-off (VAL-08).
@@ -129,6 +131,21 @@ class ValidationController extends Controller
         });
 
         return back()->with('success', 'Sign-off withdrawn. The bid can be edited again.');
+    }
+
+    /** BID-07: everything on the checklist in one ZIP, named the way the buyer will see it. */
+    public function pack(Request $request, string $tender, SubmissionPack $pack, BidWorkspace $bid, ChecklistBuilder $checklist): BinaryFileResponse
+    {
+        $tender = Tender::findOrFail($tender);
+        abort_if($this->decision($tender)?->outcome !== 'proceed', 409, 'Decide to bid first.');
+
+        $bid->ensure($tender);
+        $checklist->sync($tender);
+        $built = $pack->build($tender);
+        $note = count($built['included']).' files'.($built['missing'] !== [] ? ', '.count($built['missing']).' missing' : '');
+        AuditLog::record(AuditCategory::Documents, 'downloaded the submission pack for', $tender->label(), $note, $tender, $request->user(), $tender->id);
+
+        return response()->download($built['path'], $built['name'], ['Content-Type' => 'application/zip'])->deleteFileAfterSend();
     }
 
     private function decision(Tender $tender): ?TenderDecision

@@ -43,6 +43,8 @@ export function DocumentsScreen({
     onSave,
     onUploadFile,
     fileHref,
+    onDownloadForm,
+    packHref,
 }: {
     tender: Tender;
     documents: ResolvedItem[];
@@ -53,6 +55,10 @@ export function DocumentsScreen({
     onUploadFile?: (itemId: string, file: File) => void;
     /** Where an uploaded file can be downloaded */
     fileHref?: (itemId: string) => string | undefined;
+    /** Download a form filled in with the answers given */
+    onDownloadForm?: (itemId: string, fields: Record<string, string>) => Promise<void>;
+    /** Where the submission pack (everything so far) downloads from */
+    packHref?: string;
 }) {
     const { role, auth } = usePage<SharedData>().props;
     const [filter, setFilter] = useState<ChecklistStatus | null>(null);
@@ -96,6 +102,13 @@ export function DocumentsScreen({
                                     <ArrowLeft className="size-4" /> Compliance
                                 </Link>
                             </Button>
+                            {packHref && (
+                                <Button variant="outline" size="sm" asChild>
+                                    <a href={packHref} download title="Everything ready so far, in one ZIP, with a list of what is still missing">
+                                        <Download className="size-4" /> Download pack
+                                    </a>
+                                </Button>
+                            )}
                             <Button size="sm" asChild>
                                 <Link href={route('tenders.validation', tender.id)}>
                                     Readiness <ArrowRight className="size-4" />
@@ -217,6 +230,7 @@ export function DocumentsScreen({
                 userName={auth.user.name}
                 onOpenChange={(o) => !o && setFormEntry(null)}
                 onUploadFile={onUploadFile && formEntry ? (file) => onUploadFile(formEntry.item.id, file) : undefined}
+                onDownload={onDownloadForm && formEntry ? (fields) => onDownloadForm(formEntry.item.id, fields) : undefined}
                 onSave={(patch) => {
                     if (formEntry) save(formEntry.item.id, patch);
                     setFormEntry(null);

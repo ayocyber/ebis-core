@@ -66,6 +66,7 @@ export default function LiveValidation({
             onSignOff={() => router.post(route('tenders.signoff.store', tender.id), {}, { preserveScroll: true })}
             onUndoSignOff={() => router.delete(route('tenders.signoff.destroy', tender.id), { preserveScroll: true })}
             signOffError={errors?.signoff}
+            packHref={route('tenders.pack', tender.id)}
         />
     );
 }
