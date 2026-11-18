@@ -10,12 +10,14 @@ use App\Models\CompanyProfile;
 use App\Models\ReadinessCheck;
 use App\Models\Tender;
 use App\Models\TenderDecision;
+use App\Models\TenderDocument;
 use App\Models\User;
 use App\Support\AuditLog;
 use App\Support\Bid\BidWorkspace;
 use App\Support\Bid\ChecklistBuilder;
 use App\Support\Bid\SubmissionPack;
 use App\Support\Eligibility\EligibilityRunner;
+use App\Support\Requirements\SubmissionRuleFinder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -33,7 +35,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
  */
 class ValidationController extends Controller
 {
-    public function index(string $tender, EligibilityRunner $runner, BidWorkspace $bid, ChecklistBuilder $checklist): Response|RedirectResponse
+    public function index(string $tender, EligibilityRunner $runner, BidWorkspace $bid, ChecklistBuilder $checklist, SubmissionRuleFinder $rules): Response|RedirectResponse
     {
         $tender = Tender::with(['creator', 'documents' => fn ($q) => $q->withoutText()])->findOrFail($tender);
         $run = $runner->latestRun($tender);
@@ -60,6 +62,9 @@ class ValidationController extends Controller
             'decision' => $decision->toFrontend(),
             'items' => $items->map(fn (ChecklistItem $i) => $i->toFrontend($profile))->values(),
             'progress' => $items->mapWithKeys(fn (ChecklistItem $i) => [$i->id => (object) ($i->progress ?? [])]),
+            // TUN-04: the submission rules the pack states, read from its text.
+            'rules' => $rules->find(TenderDocument::where('tender_id', $tender->id)->whereNotNull('extracted_text')->orderBy('created_at')->get(['name', 'extracted_text'])
+                ->map(fn (TenderDocument $d) => ['name' => $d->name, 'text' => (string) $d->extracted_text])->all()),
             'scoreHistory' => ReadinessCheck::where('tender_id', $tender->id)->orderBy('created_at')->orderBy('id')->get()->map->toFrontend()->values(),
             'signedOff' => $tender->signed_off_at === null ? null : [
                 'by' => $signer->name ?? 'Former member',

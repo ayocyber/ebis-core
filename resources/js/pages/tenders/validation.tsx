@@ -96,7 +96,7 @@ export function ValidationScreen({
     sections: BidSection[];
     decision?: GoNoGoDecision;
     documents: ResolvedItem[];
-    /** The tender's submission rules (TUN-04); none for real tenders yet */
+    /** The tender's submission rules (TUN-04), as found in the pack's text */
     rules: SubmissionRule[];
     scoreHistory: ScoreRun[];
     /** Keep a result in the history; `manual` when someone pressed "check again" */
@@ -681,7 +681,7 @@ function RulesPanel({ checks, tenderId }: { checks: RuleCheck[]; tenderId: strin
             </div>
             {!checks.length && (
                 <p className="text-muted-foreground px-5 py-4 text-sm sm:px-6">
-                    ProcurPilot doesn’t read submission rules from the tender pack yet. Check the buyer’s instructions yourself for page limits, file
+                    ProcurPilot found no submission rules in the tender pack’s text. Check the buyer’s instructions yourself for page limits, file
                     formats, sizes and file names before you submit.
                 </p>
             )}

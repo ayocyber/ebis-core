@@ -259,3 +259,17 @@ it('keeps the pack from other companies and before a decision to bid', function 
     Tenant::factory()->ownedBy($rival)->create();
     $this->actingAs($rival)->get("/tenders/{$this->tender->id}/pack")->assertNotFound();
 });
+
+it('checks the bid against the submission rules found in the pack', function () {
+    $this->post("/tenders/{$this->tender->id}/documents", ['files' => [
+        TenderFiles::pdf('Instructions to tenderers.pdf', ['Tenders must be uploaded to the In-Tend portal. Individual files must not exceed 10MB.']),
+    ]]);
+    decideToProceed($this);
+
+    $this->get("/tenders/{$this->tender->id}/validation")->assertInertia(fn ($page) => $page
+        ->component('tenders/live/validation')
+        ->where('rules.0.id', 'r-portal')
+        ->where('rules.0.source', 'Instructions to tenderers.pdf p.1')
+        ->where('rules.1.id', 'r-size')
+        ->where('rules.1.limit', 10));
+});

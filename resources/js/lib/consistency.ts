@@ -94,11 +94,19 @@ const MAX_FILE_MB = 20;
 const WORDS_PER_PAGE = 500;
 const words = (t: string) => (t.trim() ? t.trim().split(/\s+/).length : 0);
 
-/** Page limits the tender sets, matched to bid sections by title. */
-const pageLimits: { match: RegExp; pages: number }[] = [
-    { match: /technical approach/i, pages: 15 },
-    { match: /case stud|experience/i, pages: 4 },
+/** Page limits of the sample tender, used when a rule gives none of its own. */
+const sampleLimits: NonNullable<SubmissionRule['limits']> = [
+    { about: 'technical approach', unit: 'pages', max: 15 },
+    { about: 'case studies experience', unit: 'pages', max: 4 },
 ];
+
+/** A limit "about" a part applies to a section whose title shares a real word with it. */
+const appliesTo = (about: string, title: string) =>
+    about
+        .toLowerCase()
+        .split(/\W+/)
+        .filter((w) => w.length >= 4)
+        .some((w) => title.toLowerCase().includes(w.replace(/(ies|s)$/, '')));
 
 export function checkRules(rules: SubmissionRule[], sections: BidSection[], documents: ResolvedItem[]): RuleCheck[] {
     const uploaded = documents.filter((d) => d.progress.fileName && d.status !== 'not_applicable');
@@ -122,28 +130,41 @@ export function checkRules(rules: SubmissionRule[], sections: BidSection[], docu
                 break;
             }
             case 'r-size': {
+                const maxMb = rule.limit ?? MAX_FILE_MB;
                 for (const d of uploaded) {
                     const mb = (d.progress.sizeBytes ?? 0) / 1024 ** 2;
-                    if (mb > MAX_FILE_MB)
+                    if (mb > maxMb)
                         breaches.push({
                             where: d.progress.fileName!,
-                            message: `${mb.toFixed(1)} MB is over the ${MAX_FILE_MB} MB limit. Compress it or split it.`,
+                            message: `${mb.toFixed(1)} MB is over the ${maxMb} MB limit. Compress it or split it.`,
                             fix: 'documents',
                         });
                 }
-                note = `Every file is under ${MAX_FILE_MB} MB`;
+                note = `Every file is under ${maxMb} MB`;
                 break;
             }
             case 'r-pages': {
+                const limits = rule.limits ?? sampleLimits;
+                const over = (where: string, count: number, l: (typeof limits)[number]) =>
+                    breaches.push({
+                        where,
+                        message:
+                            l.unit === 'pages'
+                                ? `About ${count} pages, over the ${l.max}-page limit.`
+                                : `${count.toLocaleString()} words, over the ${l.max.toLocaleString()}-word limit.`,
+                        fix: 'bid',
+                    });
+                const measure = (text: string, unit: 'pages' | 'words') => (unit === 'pages' ? Math.ceil(words(text) / WORDS_PER_PAGE) : words(text));
+
+                for (const l of limits.filter((l) => !l.about)) {
+                    const count = measure(sections.map((s) => s.body).join(' '), l.unit);
+                    if (count > l.max) over('Whole response', count, l);
+                }
                 for (const s of sections) {
-                    const limit = pageLimits.find((p) => p.match.test(s.title));
-                    const pages = Math.ceil(words(s.body) / WORDS_PER_PAGE);
-                    if (limit && pages > limit.pages)
-                        breaches.push({
-                            where: s.title,
-                            message: `About ${pages} pages, over the ${limit.pages}-page limit.`,
-                            fix: 'bid',
-                        });
+                    for (const l of limits.filter((l) => l.about && appliesTo(l.about, s.title))) {
+                        const count = measure(s.body, l.unit);
+                        if (count > l.max) over(s.title, count, l);
+                    }
                     if (s.wordLimit && words(s.body) > s.wordLimit)
                         breaches.push({
                             where: s.title,
@@ -155,10 +176,10 @@ export function checkRules(rules: SubmissionRule[], sections: BidSection[], docu
                 break;
             }
             case 'r-naming':
-                note = 'ProcurPilot renames every file to this pattern when it builds the pack';
+                note = 'The pack names files Reference_Supplier_Document. Rename any that must follow a different pattern';
                 break;
             case 'r-font':
-                note = 'Applied when ProcurPilot exports your response';
+                note = 'Word files ProcurPilot makes use Arial 11pt. Check files you upload yourself';
                 break;
             case 'r-portal':
                 note = 'You upload the pack yourself. ProcurPilot never submits for you';

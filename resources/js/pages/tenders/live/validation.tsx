@@ -1,3 +1,4 @@
+import type { SubmissionRule } from '@/data/mock-requirements';
 import type { ScoreRun } from '@/hooks/use-tender-workspace';
 import { useVault } from '@/hooks/use-vault';
 import { resolveChecklist } from '@/lib/checklist';
@@ -7,13 +8,10 @@ import type { BidSection, ChecklistItem, ChecklistProgress, EligibilityRow, GoNo
 import { router, usePage } from '@inertiajs/react';
 import { useCallback, useMemo } from 'react';
 
-/** No submission rules are read from real tender packs yet. */
-const NO_RULES: never[] = [];
-
 /**
  * Real tenders: the issues are worked out here from real data, the score history
- * and sign-off are saved on the server (VAL-06…08). No submission rules are read
- * from the pack yet, so none are checked.
+ * and sign-off are saved on the server (VAL-06…08). The submission rules are the
+ * ones the server found in the pack's text (TUN-04).
  */
 export default function LiveValidation({
     tender,
@@ -24,6 +22,7 @@ export default function LiveValidation({
     progress,
     scoreHistory,
     signedOff,
+    rules,
 }: {
     tender: Tender;
     rows: EligibilityRow[];
@@ -33,6 +32,7 @@ export default function LiveValidation({
     progress: Record<string, ChecklistProgress>;
     scoreHistory: ScoreRun[];
     signedOff: { by: string; at: string } | null;
+    rules: SubmissionRule[];
 }) {
     const { tenant, errors } = usePage<SharedData & { errors: Record<string, string> }>().props;
     const supplier = tenant?.name ?? 'Supplier';
@@ -59,7 +59,7 @@ export default function LiveValidation({
             sections={sections}
             decision={decision}
             documents={documents}
-            rules={NO_RULES}
+            rules={rules}
             scoreHistory={scoreHistory}
             recordScore={recordScore}
             signedOff={signedOff ?? undefined}

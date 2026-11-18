@@ -34,6 +34,10 @@ export interface SubmissionRule {
     label: string;
     value: string;
     source: string;
+    /** r-size: largest file allowed, in MB */
+    limit?: number;
+    /** r-pages: limits by part of the response; `about` is empty for the whole response */
+    limits?: { about: string; unit: 'pages' | 'words'; max: number }[];
 }
 
 /** TUN-02: extraction confidence per requirement code (0–1) */
