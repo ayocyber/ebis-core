@@ -31,7 +31,8 @@ export default function DeleteUser() {
         <SettingsCard title="Delete account" description="Permanently remove your account. This can’t be undone." tone="danger">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-muted-foreground text-sm">
-                    Your sign-in and personal details are deleted. Tenders, evidence and the audit log belong to your company and stay with it.
+                    Your sign-in and personal details are deleted. Tenders, evidence and the audit log belong to your company and stay with it. A
+                    company where you are the only member is deleted with you.
                 </p>
                 <Dialog>
                     <DialogTrigger asChild>
@@ -44,8 +45,8 @@ export default function DeleteUser() {
                             <TriangleAlert className="text-status-not-met size-5" /> Delete your account?
                         </DialogTitle>
                         <DialogDescription>
-                            This permanently deletes your account. Enter your password to confirm. If you are the only Owner of a company, make
-                            someone else an Owner first.
+                            This permanently deletes your account, and any company where you are the only member. Enter your password to confirm. If
+                            you are the only Owner of a company with other members, make someone else an Owner first.
                         </DialogDescription>
                         <form className="space-y-6" onSubmit={deleteUser}>
                             <div className="grid gap-2">

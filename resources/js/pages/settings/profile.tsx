@@ -9,7 +9,7 @@ import SettingsLayout from '@/layouts/settings/layout';
 import { roleLabel } from '@/lib/roles';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { BadgeCheck, MailWarning } from 'lucide-react';
+import { BadgeCheck, Download, MailWarning } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -131,6 +131,19 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
                         )}
                     </SettingsCard>
                 </form>
+
+                <SettingsCard title="Your data" description="What ProcurPilot holds about you personally (UK GDPR).">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-muted-foreground text-sm">
+                            Your account details, the companies you belong to and everything you did in them, as a JSON file.
+                        </p>
+                        <Button variant="outline" asChild className="shrink-0">
+                            <a href={route('profile.data')} download>
+                                <Download className="size-4" /> Download my data
+                            </a>
+                        </Button>
+                    </div>
+                </SettingsCard>
 
                 <DeleteUser />
             </SettingsLayout>

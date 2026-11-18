@@ -1,4 +1,5 @@
 import { CompanyFields, type CompanyData } from '@/components/company-fields';
+import { CompanyData as CompanyDataCards } from '@/components/settings/company-data';
 import { SavedNote, SettingsCard } from '@/components/settings/settings-card';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
@@ -71,6 +72,8 @@ export default function CompanySettings({ company, canManage }: Props) {
                     </span>
                     <ArrowRight className="text-muted-foreground group-hover:text-primary size-4 shrink-0 transition-all group-hover:translate-x-0.5" />
                 </Link>
+
+                {canManage && <CompanyDataCards companyName={company.name} />}
             </SettingsLayout>
         </AppLayout>
     );
