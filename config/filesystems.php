@@ -40,7 +40,8 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Off: private files are only downloaded through controllers that check the company.
+            'serve' => false,
             'throw' => false,
         ],
 

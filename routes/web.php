@@ -34,10 +34,10 @@ Route::get('invitations/{token}', [AcceptInvitationController::class, 'show'])->
 
 Route::middleware('auth')->group(function () {
     // Accepting is allowed before the person has any company of their own.
-    Route::post('invitations/{token}/accept', [AcceptInvitationController::class, 'store'])->name('invitations.accept');
+    Route::post('invitations/{token}/accept', [AcceptInvitationController::class, 'store'])->middleware('throttle:forms')->name('invitations.accept');
 });
 
-Route::middleware(['auth', 'tenant'])->group(function () {
+Route::middleware(['auth', 'tenant', 'own-tender'])->group(function () {
     Route::get('onboarding', [OnboardingController::class, 'create'])->name('onboarding.create');
     Route::post('onboarding', [OnboardingController::class, 'store'])->name('onboarding.store');
     // Step 2 of setup: upload the documents tenders always ask for, straight into the vault.
@@ -76,8 +76,8 @@ Route::middleware(['auth', 'tenant'])->group(function () {
 
     // M1: evidence vault, company profile and activity log.
     Route::get('vault', [VaultDocumentController::class, 'index'])->name('vault.index');
-    Route::post('vault/documents', [VaultDocumentController::class, 'store'])->name('vault.store');
-    Route::post('vault/read', [VaultDocumentController::class, 'read'])->name('vault.read');
+    Route::post('vault/documents', [VaultDocumentController::class, 'store'])->middleware('throttle:uploads')->name('vault.store');
+    Route::post('vault/read', [VaultDocumentController::class, 'read'])->middleware('throttle:uploads')->name('vault.read');
     Route::get('vault/documents/{document}/download', [VaultDocumentController::class, 'download'])
         ->whereUuid('document')->name('vault.download');
     Route::delete('vault/documents/{document}', [VaultDocumentController::class, 'destroy'])
@@ -86,7 +86,7 @@ Route::middleware(['auth', 'tenant'])->group(function () {
         ->whereUuid('document')->name('vault.check');
 
     // Check the company's details against the Companies House register.
-    Route::post('company/verify', [CompanyProfileController::class, 'verify'])->name('company.verify');
+    Route::post('company/verify', [CompanyProfileController::class, 'verify'])->middleware('throttle:uploads')->name('company.verify');
 
     Route::get('company', [CompanyProfileController::class, 'show'])->name('company.profile');
     Route::patch('company', [CompanyProfileController::class, 'update'])->name('company.update');
@@ -99,13 +99,13 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     // Open tenders from Find a Tender and Contracts Finder.
     Route::get('tenders/find', [OpportunityController::class, 'index'])->name('opportunities.index');
     Route::put('tenders/find/keywords', [OpportunityController::class, 'keywords'])->name('opportunities.keywords');
-    Route::post('tenders/find/{opportunity}/bid', [OpportunityController::class, 'bid'])->whereUuid('opportunity')->name('opportunities.bid');
-    Route::post('tenders', [TenderController::class, 'store'])->name('tenders.store');
+    Route::post('tenders/find/{opportunity}/bid', [OpportunityController::class, 'bid'])->whereUuid('opportunity')->middleware('throttle:uploads')->name('opportunities.bid');
+    Route::post('tenders', [TenderController::class, 'store'])->middleware('throttle:uploads')->name('tenders.store');
     Route::get('tenders/{tender}', [TenderController::class, 'show'])->whereUuid('tender')->name('tenders.show');
     Route::patch('tenders/{tender}', [TenderController::class, 'update'])->whereUuid('tender')->name('tenders.update');
     Route::delete('tenders/{tender}', [TenderController::class, 'destroy'])->whereUuid('tender')->name('tenders.destroy');
     Route::post('tenders/{tender}/documents', [TenderController::class, 'addDocuments'])
-        ->whereUuid('tender')->name('tenders.documents.store');
+        ->whereUuid('tender')->middleware('throttle:uploads')->name('tenders.documents.store');
     Route::get('tenders/{tender}/documents/{document}/download', [TenderController::class, 'download'])
         ->whereUuid(['tender', 'document'])->name('tenders.documents.download');
     Route::delete('tenders/{tender}/documents/{document}', [TenderController::class, 'destroyDocument'])
@@ -155,11 +155,11 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     Route::patch('tenders/{tender}/checklist/{item}', [ChecklistController::class, 'update'])
         ->whereUuid(['tender', 'item'])->name('tenders.checklist.update');
     Route::post('tenders/{tender}/checklist/{item}/file', [ChecklistController::class, 'upload'])
-        ->whereUuid(['tender', 'item'])->name('tenders.checklist.upload');
+        ->whereUuid(['tender', 'item'])->middleware('throttle:uploads')->name('tenders.checklist.upload');
     Route::get('tenders/{tender}/checklist/{item}/file', [ChecklistController::class, 'download'])
         ->whereUuid(['tender', 'item'])->name('tenders.checklist.download');
     Route::post('tenders/{tender}/checklist/{item}/form', [ChecklistController::class, 'form'])
-        ->whereUuid(['tender', 'item'])->name('tenders.checklist.form');
+        ->whereUuid(['tender', 'item'])->middleware('throttle:exports')->name('tenders.checklist.form');
 
     // Readiness and sign-off of a real tender (M7).
     Route::post('tenders/{tender}/readiness', [ValidationController::class, 'record'])
@@ -169,7 +169,7 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     Route::delete('tenders/{tender}/signoff', [ValidationController::class, 'undoSignOff'])
         ->whereUuid('tender')->name('tenders.signoff.destroy');
     Route::get('tenders/{tender}/pack', [ValidationController::class, 'pack'])
-        ->whereUuid('tender')->name('tenders.pack');
+        ->whereUuid('tender')->middleware('throttle:exports')->name('tenders.pack');
 
     // Stage pages. Sample tenders (tnd-001…) show the preview built on sample data.
     // Real tenders (UUIDs) use the real page.

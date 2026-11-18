@@ -15,7 +15,7 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('settings/profile', [DataController::class, 'destroyMine'])->name('profile.destroy');
-    Route::get('settings/profile/data', [DataController::class, 'exportMine'])->name('profile.data');
+    Route::get('settings/profile/data', [DataController::class, 'exportMine'])->middleware('throttle:exports')->name('profile.data');
 
     Route::get('settings/password', [PasswordController::class, 'edit'])->name('password.edit');
     Route::put('settings/password', [PasswordController::class, 'update'])->name('password.update');
@@ -27,13 +27,13 @@ Route::middleware(['auth', 'tenant'])->group(function () {
     // Company (the current tenant)
     Route::get('settings/company', [CompanyController::class, 'edit'])->name('company.edit');
     Route::patch('settings/company', [CompanyController::class, 'update'])->name('settings.company.update');
-    Route::get('settings/company/data', [DataController::class, 'exportCompany'])->name('settings.company.data');
+    Route::get('settings/company/data', [DataController::class, 'exportCompany'])->middleware('throttle:exports')->name('settings.company.data');
     Route::delete('settings/company', [DataController::class, 'destroyCompany'])->name('settings.company.destroy');
 
     Route::get('settings/members', [MembersController::class, 'index'])->name('members.index');
     Route::patch('settings/members/{user}', [MembersController::class, 'update'])->name('members.update');
     Route::delete('settings/members/{user}', [MembersController::class, 'destroy'])->name('members.destroy');
 
-    Route::post('settings/invitations', [InvitationController::class, 'store'])->name('invitations.store');
+    Route::post('settings/invitations', [InvitationController::class, 'store'])->middleware('throttle:forms')->name('invitations.store');
     Route::delete('settings/invitations/{invitation}', [InvitationController::class, 'destroy'])->name('invitations.destroy');
 });
