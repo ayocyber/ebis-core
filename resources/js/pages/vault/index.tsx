@@ -8,11 +8,11 @@ import { useVault } from '@/hooks/use-vault';
 import AppLayout from '@/layouts/app-layout';
 import { canEdit } from '@/lib/roles';
 import { cn } from '@/lib/utils';
-import { expiryState, usageFor, vaultCategoryMeta, vaultCategoryOrder } from '@/lib/vault';
+import { expiryState, vaultCategoryMeta, vaultCategoryOrder } from '@/lib/vault';
 import { type SharedData } from '@/types';
 import type { VaultCategory } from '@/types/ebis';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { AlertTriangle, ArrowRight, CalendarClock, FileQuestion, FolderLock, Plus, Search, SearchX, Upload } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CalendarClock, FolderLock, Search, SearchX, Upload } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 const urgency = { expired: 0, expiring: 1, renew_soon: 2, valid: 3, no_expiry: 4 } as const;
@@ -20,7 +20,7 @@ const urgency = { expired: 0, expiring: 1, renew_soon: 2, valid: 3, no_expiry: 4
 export default function Vault() {
     const { role } = usePage<SharedData>().props;
     const editable = canEdit(role);
-    const { documents, missing } = useVault();
+    const { documents } = useVault();
 
     const [category, setCategory] = useState<VaultCategory | 'all'>('all');
     const [query, setQuery] = useState('');
@@ -34,7 +34,7 @@ export default function Vault() {
         return {
             expired: expired.length,
             expiring: states.filter((s) => s.state === 'expiring').length,
-            blocking: expired.filter((s) => usageFor(s.d.factIds).length > 0),
+            blocking: expired,
         };
     }, [documents]);
 
@@ -82,10 +82,11 @@ export default function Vault() {
                         <AlertTriangle className="text-status-not-met size-5 shrink-0" />
                         <div className="min-w-0 flex-1 text-sm">
                             <p className="font-semibold">
-                                {stats.blocking.length} expired document{stats.blocking.length > 1 ? 's are' : ' is'} hurting live bids
+                                {stats.blocking.length} expired document{stats.blocking.length > 1 ? 's' : ''} in your vault
                             </p>
                             <p className="text-muted-foreground">
-                                {stats.blocking.map((s) => s.d.title).join(', ')}. Upload the renewal and ProcurPilot re-checks every tender that uses it.
+                                {stats.blocking.map((s) => s.d.title).join(', ')}. Upload the renewal, then check eligibility again on the tenders
+                                that need it.
                             </p>
                         </div>
                         <Button size="sm" variant="outline" onClick={() => openDoc(stats.blocking[0].d.id)}>
@@ -103,7 +104,7 @@ export default function Vault() {
                     />
                     <Stat label="Expired" value={stats.expired} hint="Renew before your next bid" tone={stats.expired ? 'danger' : 'ok'} />
                     <Stat label="Expiring in 30 days" value={stats.expiring} hint="Book renewals now" tone={stats.expiring ? 'warn' : 'ok'} />
-                    <Stat label="Missing" value={missing.length} hint="Tenders ask for these" tone={missing.length ? 'warn' : 'ok'} />
+                    <Stat label="Up to date" value={documents.length - stats.expired - stats.expiring} hint="Valid for over 30 days" />
                 </section>
 
                 {/* Timeline */}
@@ -118,30 +119,6 @@ export default function Vault() {
                     </div>
                     <ExpiryTimeline documents={documents} onOpen={openDoc} />
                 </section>
-
-                {/* Missing */}
-                {missing.length > 0 && (
-                    <section aria-labelledby="missing-title" className="space-y-3">
-                        <h2 id="missing-title" className="flex items-center gap-2 font-semibold tracking-tight">
-                            <FileQuestion className="text-status-partial size-4" /> Missing from your vault
-                        </h2>
-                        <div className="grid gap-3 md:grid-cols-3">
-                            {missing.map((m) => (
-                                <div key={m.id} className="border-status-partial/40 flex flex-col gap-3 rounded-xl border border-dashed p-4">
-                                    <div>
-                                        <p className="font-medium">{m.title}</p>
-                                        <p className="text-muted-foreground mt-1 text-sm">{m.why}</p>
-                                    </div>
-                                    {editable && (
-                                        <Button size="sm" variant="outline" className="mt-auto w-fit" onClick={() => startUpload({ missing: m })}>
-                                            <Plus className="size-4" /> Add it
-                                        </Button>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </section>
-                )}
 
                 {/* Library */}
                 <section className="space-y-4" aria-labelledby="library-title">

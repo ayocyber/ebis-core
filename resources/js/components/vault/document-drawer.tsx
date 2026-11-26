@@ -1,4 +1,3 @@
-import { StatusBadge } from '@/components/ebis/badges';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
 import { DocIcon, ExpiryPill } from '@/components/vault/document-card';
@@ -6,24 +5,13 @@ import { profileFacts } from '@/data/mock-ebis';
 import { deleteDocument } from '@/hooks/use-vault';
 import { formatBytes, formatDate } from '@/lib/ebis';
 import { cn } from '@/lib/utils';
-import { expiryLabel, expiryState, usageFor, vaultCategoryMeta } from '@/lib/vault';
+import { expiryLabel, expiryState, vaultCategoryMeta } from '@/lib/vault';
 import type { VaultDocument } from '@/types/ebis';
-import { Link, router } from '@inertiajs/react';
-import {
-    AlertTriangle,
-    ArrowUpRight,
-    CheckCircle2,
-    Download,
-    FileText,
-    RefreshCw,
-    ScanText,
-    ShieldAlert,
-    ShieldCheck,
-    ShieldQuestion,
-    Trash2,
-} from 'lucide-react';
+import { router } from '@inertiajs/react';
+import { AlertTriangle, CheckCircle2, Download, RefreshCw, ScanText, ShieldAlert, ShieldCheck, ShieldQuestion, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
+// Labels only: the values in that file belong to the demo company.
 const factsById = Object.fromEntries(Object.values(profileFacts).map((f) => [f.id, f]));
 
 export function DocumentDrawer({
@@ -54,7 +42,6 @@ export function DocumentDrawer({
 
 function Body({ doc, canEdit, onReplace, onDeleted }: { doc: VaultDocument; canEdit: boolean; onReplace: () => void; onDeleted: () => void }) {
     const [confirmDelete, setConfirmDelete] = useState(false);
-    const usage = usageFor(doc.factIds);
     const facts = doc.factIds.map((id) => factsById[id]).filter(Boolean);
     const { state, days } = expiryState(doc);
 
@@ -137,42 +124,13 @@ function Body({ doc, canEdit, onReplace, onDeleted }: { doc: VaultDocument; canE
                         </h3>
                         <ul className="mt-2 space-y-2">
                             {facts.map((f) => (
-                                <li key={f.id} className="rounded-lg border p-3">
-                                    <p className="text-muted-foreground text-xs">{f.label}</p>
-                                    <p className="text-sm">{f.value}</p>
+                                <li key={f.id} className="rounded-lg border p-3 text-sm">
+                                    {f.label}
                                 </li>
                             ))}
                         </ul>
                     </section>
                 )}
-
-                <section>
-                    <h3 className="text-muted-foreground flex items-center gap-1.5 text-xs font-semibold tracking-wide uppercase">
-                        <FileText className="size-3.5" /> Used in live tenders
-                    </h3>
-                    {usage.length ? (
-                        <ul className="mt-2 divide-y rounded-xl border">
-                            {usage.map((u) => (
-                                <li key={u.tender.id + u.code}>
-                                    <Link
-                                        href={route('tenders.eligibility', u.tender.id)}
-                                        className="hover:bg-muted/50 flex items-center gap-3 px-3 py-2.5 transition-colors"
-                                    >
-                                        <span className="text-muted-foreground w-9 font-mono text-xs">{u.code}</span>
-                                        <span className="min-w-0 flex-1">
-                                            <span className="block truncate text-sm">{u.title}</span>
-                                            <span className="text-muted-foreground block font-mono text-[11px]">{u.tender.reference}</span>
-                                        </span>
-                                        <StatusBadge status={u.status} className="text-[10px]" />
-                                        <ArrowUpRight className="text-muted-foreground size-3.5" />
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="text-muted-foreground mt-2 text-sm">No live tender relies on this document yet.</p>
-                    )}
-                </section>
             </div>
 
             {canEdit && (

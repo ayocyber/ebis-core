@@ -4,6 +4,7 @@ import { TenderNotFound } from '@/components/ebis/tender-not-found';
 import { Button } from '@/components/ui/button';
 import { type UploadTarget, UploadDialog } from '@/components/vault/upload-dialog';
 import { findTender } from '@/data/mock-ebis';
+import { missingEvidence } from '@/data/mock-vault';
 import { useChecklist } from '@/hooks/use-checklist';
 import AppLayout from '@/layouts/app-layout';
 import {
@@ -27,11 +28,11 @@ import { useRef, useState } from 'react';
 /** Sample tenders: progress stays in memory and uploads only record the file name. */
 export default function TenderDocuments({ tenderId }: { tenderId: string }) {
     const tender = findTender(tenderId);
-    const { documents, vault, supplier, updateChecklist } = useChecklist(tenderId, tender);
+    const { documents, supplier, updateChecklist } = useChecklist(tenderId, tender);
 
     if (!tender) return <TenderNotFound />;
 
-    return <DocumentsScreen tender={tender} documents={documents} supplier={supplier} missing={vault.missing} onSave={updateChecklist} />;
+    return <DocumentsScreen tender={tender} documents={documents} supplier={supplier} missing={missingEvidence} onSave={updateChecklist} />;
 }
 
 /** Stage 7 (BID-02, BID-06): every form and file the buyer wants, and where each stands. */

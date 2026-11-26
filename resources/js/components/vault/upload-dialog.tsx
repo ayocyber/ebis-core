@@ -102,13 +102,12 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
     const save = async () => {
         if (!file) return;
         const g = target.gap;
-        let viaVault: DocUsage[] = [];
         // Bid-only documents stay with the tender (sample data until M6); company documents go to the vault.
         if (g?.scope !== 'bid') {
             setSaving(true);
             setError(null);
             try {
-                viaVault = await saveDocument({
+                await saveDocument({
                     file,
                     title: form.title.trim(),
                     category: form.category,
@@ -129,10 +128,8 @@ function UploadFlow({ target, onClose }: { target: UploadTarget; onClose: () => 
         }
         if (g) {
             setGapStatusFor(g.tender.id, g.gapId, 'closed', g.scope === 'bid' ? `${form.title.trim()} added to this bid` : undefined);
-            if (!viaVault.some((u) => u.tender.id === g.tender.id && u.code === g.code))
-                viaVault.unshift({ tender: g.tender, code: g.code, title: g.requirementTitle, status: 'met', gapId: g.gapId });
         }
-        setFixed(viaVault);
+        setFixed(g ? [{ tender: g.tender, code: g.code, title: g.requirementTitle, status: 'met', gapId: g.gapId }] : []);
         setStep('done');
     };
 

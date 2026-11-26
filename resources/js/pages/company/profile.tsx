@@ -43,7 +43,7 @@ type ProfileProps = SharedData & { profile: CompanyProfile & { version: number }
 export default function CompanyProfilePage() {
     const { role, profile, companiesHouseEnabled } = usePage<ProfileProps>().props;
     const editable = canEdit(role);
-    const { documents, missing } = useVault();
+    const { documents } = useVault();
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState<CompanyProfile>(profile);
     const [saving, setSaving] = useState(false);
@@ -67,7 +67,6 @@ export default function CompanyProfilePage() {
         certs.length > 0,
         people.length > 0,
         profile.socialValue.length > 0,
-        ...missing.map(() => false),
     ];
     const completeness = Math.round((checks.filter(Boolean).length / checks.length) * 100);
 
@@ -180,11 +179,6 @@ export default function CompanyProfilePage() {
                                         style={{ width: `${completeness}%` }}
                                     />
                                 </div>
-                                {missing.length > 0 && (
-                                    <Link href={route('vault.index')} className="text-primary mt-1.5 block text-xs hover:underline">
-                                        {missing.length} document{missing.length > 1 ? 's' : ''} missing
-                                    </Link>
-                                )}
                             </div>
                         </div>
                     </div>
