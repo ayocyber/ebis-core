@@ -1,4 +1,3 @@
-import { eligibilityRowsFor, tenders } from '@/data/mock-ebis';
 import { daysUntil } from '@/lib/ebis';
 import type { AssessmentStatus, Tender, VaultCategory, VaultDocument } from '@/types/ebis';
 import { Award, Briefcase, Building2, FileBadge, FileText, Landmark, type LucideIcon, ScrollText, ShieldCheck, Users } from 'lucide-react';
@@ -76,15 +75,4 @@ export interface DocUsage {
     title: string;
     status: AssessmentStatus;
     gapId?: string;
-}
-
-/** Live tenders (eligibility done, not yet submitted) whose requirements rely on these facts. */
-export function usageFor(factIds: string[]): DocUsage[] {
-    if (!factIds.length) return [];
-    const live = tenders.filter((t) => t.eligibilityScore !== undefined && t.stage !== 'submitted');
-    return live.flatMap((tender) =>
-        eligibilityRowsFor(tender.id)
-            .filter((r) => r.assessment.evidence.profileFacts.some((f) => factIds.includes(f.id)))
-            .map((r) => ({ tender, code: r.requirement.code, title: r.requirement.title, status: r.assessment.status, gapId: r.gap?.id })),
-    );
 }

@@ -1,8 +1,8 @@
 import { formatBytes } from '@/lib/ebis';
 import { cn } from '@/lib/utils';
-import { expiryLabel, expiryMeta, expiryState, usageFor, vaultCategoryMeta } from '@/lib/vault';
+import { expiryLabel, expiryMeta, expiryState, vaultCategoryMeta } from '@/lib/vault';
 import type { VaultDocument } from '@/types/ebis';
-import { AlertTriangle, Link2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 export function ExpiryPill({ doc, className }: { doc: VaultDocument; className?: string }) {
     const { state, days } = expiryState(doc);
@@ -32,7 +32,6 @@ export function DocIcon({ doc, className }: { doc: Pick<VaultDocument, 'category
 
 export function DocumentCard({ doc, onOpen, style }: { doc: VaultDocument; onOpen: () => void; style?: React.CSSProperties }) {
     const { state, days } = expiryState(doc);
-    const tenders = new Set(usageFor(doc.factIds).map((u) => u.tender.id)).size;
     const urgent = state === 'expired' || state === 'expiring';
 
     return (
@@ -66,11 +65,6 @@ export function DocumentCard({ doc, onOpen, style }: { doc: VaultDocument; onOpe
                             title="The content check found something to look at"
                         >
                             <AlertTriangle className="size-3.5" /> Check
-                        </span>
-                    )}
-                    {tenders > 0 && (
-                        <span className="flex items-center gap-1" title="Live tenders relying on this document">
-                            <Link2 className="size-3.5" /> {tenders} tender{tenders > 1 ? 's' : ''}
                         </span>
                     )}
                     <span

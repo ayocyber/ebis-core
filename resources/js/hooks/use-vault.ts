@@ -1,22 +1,13 @@
-import { missingEvidence as tenderAsks } from '@/data/mock-vault';
-import { setGapStatusFor } from '@/hooks/use-tender-workspace';
-import { type DocUsage, usageFor } from '@/lib/vault';
 import { type SharedData } from '@/types';
-import type { MissingEvidence, VaultCategory, VaultDocument } from '@/types/ebis';
+import type { VaultCategory, VaultDocument } from '@/types/ebis';
 import { router, usePage } from '@inertiajs/react';
 
 /**
  * The evidence vault, from the server (shared Inertia prop `vault`).
- *
- * `missing` is still worked out from the sample tenders until tenders are real (M2–M4):
- * an item disappears once a vault document proves the fact it asks for.
+ * What each tender is missing lives on that tender's gaps page.
  */
-export function useVault(): { documents: VaultDocument[]; missing: MissingEvidence[] } {
-    const documents = usePage<SharedData>().props.vault?.documents ?? [];
-    const held = new Set(documents.flatMap((d) => d.factIds));
-    const titles = new Set(documents.map((d) => d.title.toLowerCase()));
-    const missing = tenderAsks.filter((m) => (m.factId ? !held.has(m.factId) : !titles.has(m.title.toLowerCase())));
-    return { documents, missing };
+export function useVault(): { documents: VaultDocument[] } {
+    return { documents: usePage<SharedData>().props.vault?.documents ?? [] };
 }
 
 export interface NewVaultDocument {
@@ -39,17 +30,14 @@ export interface NewVaultDocument {
 /** Inertia cancels a visit when another starts, so uploads go one at a time. */
 let queue: Promise<unknown> = Promise.resolve();
 
-/**
- * Upload to the vault. Resolves with the live tender requirements it now fixes,
- * rejects with the server's validation messages.
- */
-export function saveDocument(doc: NewVaultDocument): Promise<DocUsage[]> {
+/** Upload to the vault. Rejects with the server's validation messages. */
+export function saveDocument(doc: NewVaultDocument): Promise<void> {
     const next = queue.then(() => upload(doc));
     queue = next.catch(() => undefined);
     return next;
 }
 
-function upload(doc: NewVaultDocument): Promise<DocUsage[]> {
+function upload(doc: NewVaultDocument): Promise<void> {
     return new Promise((resolve, reject) => {
         router.post(
             route('vault.store'),
@@ -69,13 +57,8 @@ function upload(doc: NewVaultDocument): Promise<DocUsage[]> {
                 forceFormData: true,
                 preserveScroll: true,
                 preserveState: true,
-                onSuccess: () => {
-                    const valid = !doc.expiresAt || new Date(doc.expiresAt) > new Date();
-                    // Sample tenders: close the gaps this document resolves (real re-assessment arrives with M4).
-                    const fixed = valid ? usageFor(doc.factIds ?? []).filter((u) => u.status !== 'met' && u.gapId) : [];
-                    fixed.forEach((u) => setGapStatusFor(u.tender.id, u.gapId!, 'closed', `Closed by ${doc.title} in the vault`));
-                    resolve(fixed);
-                },
+                // Tenders close the gaps it fixes when eligibility is checked again.
+                onSuccess: () => resolve(),
                 onError: (errors) => reject(errors),
                 onCancel: () => reject({ file: 'Upload cancelled.' }),
             },

@@ -5,6 +5,7 @@ import { GapTimeline } from '@/components/gaps/gap-timeline';
 import { Button } from '@/components/ui/button';
 import { UploadDialog, type UploadTarget } from '@/components/vault/upload-dialog';
 import { findTender } from '@/data/mock-ebis';
+import { missingEvidence as missing } from '@/data/mock-vault';
 import { useTenderWorkspace } from '@/hooks/use-tender-workspace';
 import { useVault } from '@/hooks/use-vault';
 import AppLayout from '@/layouts/app-layout';
@@ -41,7 +42,7 @@ const gbp = (n: number) => new Intl.NumberFormat('en-GB', { style: 'currency', c
 export default function TenderGaps({ tenderId }: { tenderId: string }) {
     const tender = findTender(tenderId);
     const { rows, setGapStatus } = useTenderWorkspace(tenderId);
-    const { documents, missing } = useVault();
+    const { documents } = useVault();
 
     if (!tender) return <TenderNotFound />;
 

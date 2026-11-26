@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { tenders } from '@/data/mock-ebis';
 import { type AuditCategory, type AuditEvent, auditCategoryMeta, auditCsv, useAudit } from '@/hooks/use-audit';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
@@ -8,6 +7,8 @@ import { type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { Download, Lock, Search, SearchX, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
+
+type ActivityTender = { id: string; reference: string; buyer: string };
 
 const selectClass =
     'border-input bg-background focus-visible:ring-ring/50 h-9 rounded-md border px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:outline-none';
@@ -21,7 +22,7 @@ const initials = (name: string) =>
         .toUpperCase();
 
 export default function ActivityLog() {
-    const { activity } = usePage<SharedData & { activity: AuditEvent[] }>().props;
+    const { activity, tenders } = usePage<SharedData & { activity: AuditEvent[]; tenders: ActivityTender[] }>().props;
     const events = useAudit(activity);
     const [query, setQuery] = useState('');
     const [area, setArea] = useState<AuditCategory | ''>('');
@@ -123,7 +124,7 @@ export default function ActivityLog() {
                         <option value="">All tenders</option>
                         {tenders.map((t) => (
                             <option key={t.id} value={t.id}>
-                                {t.reference} · {t.buyer.name}
+                                {t.reference} · {t.buyer}
                             </option>
                         ))}
                     </select>
