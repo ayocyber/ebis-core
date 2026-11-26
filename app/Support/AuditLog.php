@@ -6,6 +6,7 @@ use App\Enums\AuditCategory;
 use App\Models\AuditEvent;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 /**
  * The only way to write to the activity log (EVD-05).
@@ -33,8 +34,10 @@ class AuditLog
             'actor_id' => $actor?->getKey(),
             'actor_name' => $actor !== null ? $actor->name : self::SYSTEM,
             'category' => $category,
-            'action' => $action,
-            'target' => $target,
+            // The columns hold 255 characters. Postgres refuses longer text (SQLite doesn't), and a long
+            // tender reference plus title went over, so the whole action failed.
+            'action' => Str::limit($action, 252),
+            'target' => Str::limit($target, 252),
             'tender_id' => $tenderId,
             'detail' => $detail !== '' ? $detail : null,
             'subject_type' => $subject?->getMorphClass(),
