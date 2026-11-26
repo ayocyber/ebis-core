@@ -38,3 +38,13 @@ it('is append-only', function () {
         ->and(fn () => $this->event->delete())->toThrow(LogicException::class)
         ->and(AuditEvent::withoutGlobalScopes()->sole()->action)->toBe('updated the company profile');
 });
+
+it('keeps long targets within the 255-character columns', function () {
+    // Postgres refuses longer text; a long tender reference plus title once broke "Bid for this".
+    $event = app(CurrentTenant::class)->runAs($this->tenant, fn () => AuditLog::record(
+        AuditCategory::Documents, str_repeat('a', 300), str_repeat('t', 300),
+    ));
+
+    expect(mb_strlen($event->action))->toBeLessThanOrEqual(255)
+        ->and(mb_strlen($event->target))->toBeLessThanOrEqual(255);
+});
